@@ -10,34 +10,31 @@ Implementacija treba da sadrzi 3 komponente:
 platnim prometom.
 
 Akcije koje treba podrzati na korisnickom interfejsu su:
-    1. Registracija novog korisnika
-    2. Logovanje postojeceg korisnika
-    3. Izmena korisnickog profila
-    4. Pravljenje teme na koju se drugi korisnici mogu pretplatiti
-    5. Pravljenje novog komentara od strane bilo kojeg korisnika
-    6. Slanje obaveštenja svim pretplaćenim korisnicima
-    7. Upvote \ downvote komentara
-    8. Omogućiti upvote \ downvote iz samog mejla
-    9. Omogućiti brisanje neke teme od strane vlasnika
-    10. Omogućti pretragu tema i sortiranje po tome koje imaju najviše komentara ili najviše
-    upvotes ili downvotes. Samo ulogovani korisnici mogu da rade upvote - downvote ili
-    da komentarišu.
-    11. Omogućiti vlasniku teme da u bilo kom momentu može da napravi temu zatvorenom
-    za komentarisanje
+    - Registracija novog korisnika
+    - Logovanje postojeceg korisnika
+    - Izmena korisnickog profila
+    - Pravljenje teme na koju se drugi korisnici mogu pretplatiti
+    - Pravljenje novog komentara od strane bilo kojeg korisnika
+    - Slanje obaveštenja svim pretplaćenim korisnicima
+    - Upvote \ downvote komentara
+    - Omogućiti upvote \ downvote iz samog mejla
+    - Omogućiti brisanje neke teme od strane vlasnika
+    - Omogućti pretragu tema i sortiranje po tome koje imaju najviše komentara ili najviše upvotes ili downvotes. Samo ulogovani korisnici mogu da rade upvote - downvote ili da komentarišu.
+    - Omogućiti vlasniku teme da u bilo kom momentu može da napravi temu zatvorenom za komentarisanje
     
 Korisnik se registruje unoseci:
-    1. Ime
-    2. Prezime
-    3. Adresa
-    4. Grad
-    5. Drzava
-    6. Broj telefona
-    7. Email
-    8. Lozinka
+    - Ime
+    - Prezime
+    - Adresa
+    - Grad
+    - Drzava
+    - Broj telefona
+    - Email
+    - Lozinka
     
 Korisnike se loguje putem:
-    ● Email
-    ● Lozinka
+    - Email
+    - Lozinka
     
 Novi korisnik nakon krearanog naloga dolazi na stranicu sa temama, gde postoji inicijalno
 prazan spisak njegovih tema sa mogućnošću pravljenja nove teme, a ispod se nalazi spisak
