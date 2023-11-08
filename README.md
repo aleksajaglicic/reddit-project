@@ -10,7 +10,7 @@ Implementacija treba da sadrzi 3 komponente:
 platnim prometom.
 
 Akcije koje treba podrzati na korisnickom interfejsu su:
-    - Registracija novog korisnika
+- Registracija novog korisnika
     - Logovanje postojeceg korisnika
     - Izmena korisnickog profila
     - Pravljenje teme na koju se drugi korisnici mogu pretplatiti
