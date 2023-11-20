@@ -1,12 +1,15 @@
 import threading
 import smtplib
+import datetime
 from flask import Flask, jsonify, request, abort, make_response, render_template, session, Blueprint
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
+from flask_jwt_extended import unset_jwt_cookies
 from models.user import db, User
 from config import ApplicationConfig
 from flask_sqlalchemy import SQLAlchemy
@@ -27,7 +30,8 @@ class User(db.Model):
     phone_number = db.Column(db.String(48), unique=True)
     email = db.Column(db.String(345), unique=True, nullable=False)
     password = db.Column(db.Text, nullable=False)
-    
+
+
 app = Flask(__name__)
 CORS(app)
 app.config.from_object(ApplicationConfig)
@@ -70,6 +74,23 @@ def register_user():
         "email": new_user.email
     })
 
+@api.after_request
+def refresh_expiring_jwts(response):
+    try:
+        exp_timestamp = get_jwt()["exp"]
+        now = datetime.now(timezone.utc)
+        target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
+        if target_timestamp > exp_timestamp:
+            access_token = create_access_token(identity=get_jwt_identity())
+            data = response.get_json()
+            if type(data) is dict:
+                data["access_token"] = access_token 
+                response.data = json.dumps(data)
+        return response
+    except (RuntimeError, KeyError):
+        # Case where there is not a valid JWT. Just return the original respone
+        return response
+
 @app.route("/login", methods=["POST"])
 def login_user():
     email = request.json["email"]
@@ -83,6 +104,18 @@ def login_user():
     
     access_token = create_access_token(identity=user.id)
     return jsonify(access_token=access_token)
+
+@app.route("/protected", methods=["GET"])
+@jwt_required()
+def protected():
+    current_user = get_jwt_identity()
+    return jsonify(logged_in_as=current_user), 200
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    response = jsonify({"message": "logout succesful"})
+    unset_jwt_cookies(response)
+    return response
 
 @app.route("/test", methods=["GET"])
 def test():
