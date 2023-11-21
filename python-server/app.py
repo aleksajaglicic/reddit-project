@@ -1,7 +1,7 @@
 import threading
 import smtplib
 import datetime
-from flask import Flask, jsonify, request, abort, make_response, render_template, session, Blueprint
+from flask import Flask, jsonify, request, abort, make_response, render_template, session, Blueprint, copy_current_request_context
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token
@@ -38,11 +38,26 @@ app.config.from_object(ApplicationConfig)
 app.url_map.strict_slashes = False
 jwt = JWTManager(app)
 
-brcypt = Bcrypt(app)
+bcrypt = Bcrypt(app)
 db.init_app(app)
 
 with app.app_context():
     db.create_all()
+
+def send_confirmation_email(email):
+    # Simulating sending a confirmation email
+    print(f"Sending confirmation email to {email}")
+    # Your email sending logic goes here
+
+def register_user_in_thread(name, last_name, address, city, phone_number, email, password):
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    new_user = User(name=name, last_name=last_name, address=address, city=city, phone_number=phone_number, email=email, password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    # Trigger email confirmation in a separate thread
+    user_thread = threading.Thread(target=send_confirmation_email, args=(email,))
+    user_thread.start()
 
 @app.route("/register", methods=["POST"])
 def register_user():
@@ -59,22 +74,29 @@ def register_user():
     if user_exists:
         return jsonify({"error": "A user already exists with that email."}), 409
 
-    hashed_password = brcypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(name=name, last_name=last_name, address=address, city=city, phone_number=phone_number, email=email, password=hashed_password)
-    db.session.add(new_user)
-    db.session.commit()
+    # hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    # new_user = User(name=name, last_name=last_name, address=address, city=city, phone_number=phone_number, email=email, password=hashed_password)
+    # db.session.add(new_user)
+    # db.session.commit()
+
+    register_thread = threading.Thread(target=register_user_in_thread, args=(name, last_name, address, city, phone_number, email, password))
+    register_thread.start()
     
     #print(f"new_user.password: {new_user.password}")
     # user_thread = threading.Thread(target=send_confirmation_email, args=(email,))
     # user_thread.start()
 
+    # return jsonify({
+    #     "id": new_user.id,
+    #     "name": new_user.name,
+    #     "email": new_user.email
+    # })
+
     return jsonify({
-        "id": new_user.id,
-        "name": new_user.name,
-        "email": new_user.email
+        "message": "Registration in progress. Confirmation email will be sent shortly."
     })
 
-@api.after_request
+@app.after_request
 def refresh_expiring_jwts(response):
     try:
         exp_timestamp = get_jwt()["exp"]
@@ -91,19 +113,52 @@ def refresh_expiring_jwts(response):
         # Case where there is not a valid JWT. Just return the original respone
         return response
 
-@app.route("/login", methods=["POST"])
-def login_user():
-    email = request.json["email"]
-    password = request.json["password"]
+def login_user(email, password):
     user = User.query.filter_by(email=email).first()
 
     if user is None:
-        return jsonify({"error": "Unathorized"}), 401
-    if not brcypt.check_password_hash(user.password, password):
-        return jsonify({"error": "Bad username or password"}), 401
-    
+        return jsonify({"error": "Unauthorized"}), 401
+
+    print(f"Received password: {password}")
+    print(f"Stored hashed password: {user.password}")
+
+    try:
+        if not bcrypt.check_password_hash(user.password, password):
+            return jsonify({"error": "Bad email or password"}), 401
+    except Exception as e:
+        print(f"Error checking password hash: {e}")
+        return jsonify({"error": "Internal Server Error"}), 500
+
     access_token = create_access_token(identity=user.id)
-    return jsonify(access_token=access_token)
+    return jsonify(access_token=access_token, user={"id": user.id, "email": user.email})
+
+@app.route("/login", methods=["POST"])
+def login_user_route():
+    email = request.json["email"]
+    password = request.json["password"]
+
+    return login_user(email, password)
+    
+# @app.route("/login", methods=["POST"])
+# def login_user():
+#     email = request.json["email"]
+#     password = request.json["password"]
+#     # print(f"Received login request for email: {email}")
+#     # user = User.query.filter_by(email=email).first()
+
+#     # if user is None:
+#     #     return jsonify({"error": "Unathorized"}), 401
+#     # if not brcypt.check_password_hash(user.password, password):
+#     #     return jsonify({"error": "Bad username or password"}), 401
+    
+#     # access_token = create_access_token(identity=user.id)
+#     # return jsonify(access_token=access_token, user={"id": user.id, "email": user.email})
+#     login_thread = threading.Thread(target=login_user_in_thread, args=(email, password))
+#     login_thread.start()
+
+#     return jsonify({
+#         "message": "Login in progress. Please wait."
+#     })
 
 @app.route("/protected", methods=["GET"])
 @jwt_required()
