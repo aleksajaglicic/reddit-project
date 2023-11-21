@@ -10,7 +10,7 @@ import Profile from './pages/Profile';
 
 const Layout = () => {
   return (
-    <div className="d-flex flex-column h-screen">
+    <div className="d-flex flex-column h-screen min-w-700px">
       <ScrollToTop>
       <Navbar />
       <div className="flex-grow flex pt-16">
