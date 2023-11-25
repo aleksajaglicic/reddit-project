@@ -19,11 +19,16 @@ export default {
     ]
   },
   theme: {
+    fontFamily: {
+      'Lato': ['Lato', 'sans-serif']
+    },
     extend: {
     },
   },
   plugins: [
     // eslint-disable-next-line no-undef
     require('daisyui'),
+    // eslint-disable-next-line no-undef
+    require('@codaworks/react-glow/tailwind'),
   ],
 }

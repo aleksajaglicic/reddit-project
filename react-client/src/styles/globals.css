@@ -2,6 +2,44 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-background-clip: text;
+    box-shadow: inset 0 0 20px 20px #15191e;
+}
+
+@font-face {
+    font-family: "Lato";
+    src: url("../assets/fonts/Lato-Regular.ttf");
+}
+
+@font-face {
+    font-family: "Lato";
+    src: url("../assets/fonts/Lato-Bold.ttf");
+}
+
+@font-face {
+    font-family: "Lato";
+    src: url("../assets/fonts/Lato-Light.ttf");
+}
+
+@font-face {
+    font-family: "Lato";
+    src: url("../assets/fonts/Lato-Thin.ttf");
+}
+
+.toast {
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
+    z-index: 1000;
+}
+
+.fade-out {
+    opacity: 0;
+}
+
 svg {
     fill: white;
     overflow: visible;
@@ -18,8 +56,9 @@ img {
     top: 0;
     left: 0;
     width: 100%;
-    height: 60px; /* Adjust the height as needed */
-    background: var(--navbar-bg); /* Use the custom property for the background color */
+    height: 60px; 
+    background: var(--navbar-bg);
+    opacity: inherit;
 }
 
 .navbar::before {
@@ -30,11 +69,38 @@ img {
     width: 100%;
     height: 100%;
     background: inherit;
-    backdrop-filter: blur(30px); /* Adjust the blur level as needed */
+    backdrop-filter: blur(30px);
     z-index: -1;
+    opacity: inherit;
 }
 
 body {
     margin: 0;
     padding: 0;
+}
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px; 
+    background: rgba(20, 20, 21, 0.5);
+}
+
+.navbar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    backdrop-filter: blur(30px);
+    z-index: -1;
+}
+
+/* Add these styles to your CSS or SCSS file */
+.toast-container {
+    display: flex;
+    flex-direction: column-reverse;
 }

@@ -1,6 +1,8 @@
 import threading
-import smtplib
 import datetime
+import json
+from concurrent.futures import ThreadPoolExecutor
+from flask_mail import Mail, Message
 from flask import Flask, jsonify, request, abort, make_response, render_template, session, Blueprint, copy_current_request_context
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
@@ -10,44 +12,50 @@ from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import unset_jwt_cookies
-from models.user import db, User
+from database import init_db, User, Topic, Post, Comment, db
 from config import ApplicationConfig
 from flask_sqlalchemy import SQLAlchemy
 from uuid import uuid4
 
-db = SQLAlchemy()
+# db = SQLAlchemy()
 
 def get_uuid():
     return uuid4().hex
-
-class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.String(32), primary_key=True, unique=True, default=get_uuid())
-    name = db.Column(db.String(32), unique=False, nullable=False)
-    last_name = db.Column(db.String(32), unique=False, nullable=False)
-    address = db.Column(db.String(32), unique=False)
-    city = db.Column(db.String(32), unique=False)
-    phone_number = db.Column(db.String(48), unique=True)
-    email = db.Column(db.String(345), unique=True, nullable=False)
-    password = db.Column(db.Text, nullable=False)
-
 
 app = Flask(__name__)
 CORS(app)
 app.config.from_object(ApplicationConfig)
 app.url_map.strict_slashes = False
 jwt = JWTManager(app)
-
 bcrypt = Bcrypt(app)
 db.init_app(app)
+init_db(app)
+
+executor = ThreadPoolExecutor()
+
+# user_notifications = {}
+# user_notifications_lock = threading.Lock()
 
 with app.app_context():
     db.create_all()
 
-def send_confirmation_email(email):
-    # Simulating sending a confirmation email
-    print(f"Sending confirmation email to {email}")
-    # Your email sending logic goes here
+def send_mail(subject, recipient, body):
+    try:
+        msg = Message(subject, recipients=[recipient], body=body)
+        mail.send(msg)
+    except Exception as e:
+        print(f"Error sending email: {e}")
+
+def send_mail_async(subject, recipient, body):
+    executor.submit(send_mail, subject, recipient, body)
+
+def send_confirmation_email_async(email):
+    subject = "Confirmation Email"
+    body = f"Thank you for registering on our platform! Your email {email} has been confirmed."
+    send_mail_async(subject, email, body)
+
+
+### USER REGISTRATION ###
 
 def register_user_in_thread(name, last_name, address, city, phone_number, email, password):
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -113,6 +121,8 @@ def refresh_expiring_jwts(response):
         # Case where there is not a valid JWT. Just return the original respone
         return response
 
+### USER LOGIN ###
+
 def login_user(email, password):
     user = User.query.filter_by(email=email).first()
 
@@ -138,27 +148,39 @@ def login_user_route():
     password = request.json["password"]
 
     return login_user(email, password)
-    
-# @app.route("/login", methods=["POST"])
-# def login_user():
-#     email = request.json["email"]
-#     password = request.json["password"]
-#     # print(f"Received login request for email: {email}")
-#     # user = User.query.filter_by(email=email).first()
 
-#     # if user is None:
-#     #     return jsonify({"error": "Unathorized"}), 401
-#     # if not brcypt.check_password_hash(user.password, password):
-#     #     return jsonify({"error": "Bad username or password"}), 401
-    
-#     # access_token = create_access_token(identity=user.id)
-#     # return jsonify(access_token=access_token, user={"id": user.id, "email": user.email})
-#     login_thread = threading.Thread(target=login_user_in_thread, args=(email, password))
-#     login_thread.start()
+### PROFILE ###
 
-#     return jsonify({
-#         "message": "Login in progress. Please wait."
-#     })
+@app.route("/profile", methods=["GET"])
+@jwt_required()
+def user_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    topics = Topic.query.filter_by(user_id=user_id).all()
+    posts = Post.query.filter_by(user_id=user_id).all()
+    comments = Comment.query.filter_by(user_id=user_id).all()
+
+    topics_data = [{"id": topic.id, "title": topic.title, "content": topic.content} for topic in topics]
+    posts_data = [{"id": post.id, "content": post.content} for post in posts]
+    comments_data = [{"id": comment.id, "content": comment.content} for comment in comments]
+
+    return jsonify({
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            # Add more user attributes as needed
+        },
+        "topics": topics_data,
+        "posts": posts_data,
+        "comments": comments_data,
+    })
+
+### ROUTES ###
 
 @app.route("/protected", methods=["GET"])
 @jwt_required()
@@ -171,6 +193,39 @@ def logout():
     response = jsonify({"message": "logout succesful"})
     unset_jwt_cookies(response)
     return response
+
+@app.route("/create_comment", methods=["POST"])
+@jwt_required()
+def create_comment_route():
+    post_id = request.json["post_id"]
+    content = request.json["content"]
+    return create_comment(post_id, content)
+
+@app.route("/upvote_comment", methods=["POST"])
+@jwt_required()
+def upvote_comment_route():
+    comment_id = request.json["comment_id"]
+    return upvote_comment(comment_id)
+
+@app.route("/downvote_comment", methods=["POST"])
+@jwt_required()
+def downvote_comment_route():
+    comment_id = request.json["comment_id"]
+    return downvote_comment(comment_id)
+
+@app.route("/delete_topic", methods=["POST"])
+@jwt_required()
+def delete_topic_route():
+    topic_id = request.json["topic_id"]
+    return delete_topic(topic_id)
+
+@app.route("/sort_search_topics", methods=["POST"])
+@jwt_required()
+def sort_search_topics_route():
+    sort_type = request.json.get("sort_type", "default")
+    search_query = request.json.get("search_query", "")
+    topics_data = sort_search_topics(sort_type, search_query)
+    return jsonify({"topics": topics_data})
 
 @app.route("/test", methods=["GET"])
 def test():

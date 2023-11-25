@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-unused-vars
 import React from "react"
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext"
 import { MagnifyingGlassIcon } from "@heroicons/react/20/solid"
 import { useNavigate } from "react-router-dom"
 
@@ -22,9 +22,20 @@ const Navbar = () => {
     }
 
     return (
-        <div className="navbar fixed bg-base-300 bg-opacity-30 w-full z-50">
+        <div 
+        className="navbar 
+            fixed bg-base-300 
+            border-b border-base-300 
+            border-opacity-75
+            bg-opacity-7
+            w-full z-50"
+            style={{ "--navbar-bg": "var(--bg-base-300)" }}>
             <div className="navbar-start">
-                <img className="w-7 p-1 ml-2 cursor-pointer" onClick={handleLogoClick} src="/reddit-4.svg" alt="Logo" />
+                <img 
+                    className="w-7 p-1 ml-2 cursor-pointer" 
+                    onClick={handleLogoClick} 
+                    src="/reddit-4.svg" 
+                    alt="Logo" />
                 <a className="text-xl pl-1 cursor-pointer" onClick={handleLogoClick}>PReddit</a>
             </div>
             <div className="relative w-full">
@@ -43,7 +54,15 @@ const Navbar = () => {
                                 <p>{user.email}</p>
                             </div>
                         </label>
-                        <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-300 rounded-box w-52">
+                        <ul
+                        tabIndex={0}
+                        className="menu 
+                            menu-sm 
+                            dropdown-content 
+                            mt-3 z-[1] 
+                            p-2 shadow 
+                            bg-base-300 
+                            rounded-box w-52">
                             <li>
                                 <a className="justify-between">
                                     {user.email}
