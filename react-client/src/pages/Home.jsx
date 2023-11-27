@@ -12,7 +12,6 @@ const Home = () => {
     const [posts, setPosts] = useState([]);
 
     useEffect(() => {
-        // Fetch random posts from different topics
         fetch("http://localhost:5000/")
             .then((response) => response.json())
             .then((data) => {

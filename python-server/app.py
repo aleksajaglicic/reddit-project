@@ -90,7 +90,6 @@ def register_user():
     db.session.add(new_user)
     db.session.commit()
 
-    # You can include the email confirmation logic here if needed
     # send_confirmation_email(email)
 
     return jsonify({
@@ -200,7 +199,6 @@ def user_profile():
             "id": user.id,
             "name": user.name,
             "email": user.email,
-            # Add more user attributes as needed
         },
         "topics": topics_data,
         "posts": posts_data,
@@ -281,20 +279,16 @@ def get_random_posts():
 @app.route("/pr/<string:title>", methods=["GET"])
 @jwt_required()
 def topic_page(title):
-    # Fetch the topic data based on the title from the server
     topic = db.session.query(Topic).filter_by(title=title).first()
 
     if not topic:
         return jsonify({"error": "no topic found"})
 
-    # Assuming you want to show 10 posts per page
     page = request.args.get('page', 1, type=int)
     per_page = 10
 
-    # Query posts related to the topic
     posts = db.session.query(Post).filter_by(topic_id=topic.id).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Extract relevant post information
     formatted_posts = [
         {
             "id": post.id,
@@ -304,17 +298,14 @@ def topic_page(title):
             "content": post.content,
             "like_number": post.like_number,
             "like_number": post.like_number,
-            # Add other fields as needed
         }
         for post in posts.items
     ]
 
-    # Return posts as part of the response
     response_data = {
         "topic": {
             "title": topic.title,
             "description": topic.description,
-            # Add other topic fields as needed
         },
         "posts": formatted_posts,
         "has_next": posts.has_next,

@@ -10,7 +10,6 @@ const TopicPage = () => {
     const [hasNext, setHasNext] = useState(false);
 
     useEffect(() => {
-        // Fetch the topic and posts data based on the title from the server
         fetch(`http://localhost:5000/pr/${title}?page=${page}`)
         .then((response) => response.json())
         .then((data) => {
@@ -22,7 +21,6 @@ const TopicPage = () => {
     }, [title, page]);
 
     const loadMorePosts = () => {
-        // Increment the page number to load more posts
         setPage((prevPage) => prevPage + 1);
     };
 
@@ -35,10 +33,8 @@ const TopicPage = () => {
             <h1>{topic.title}</h1>
             <p>{topic.description}</p>
 
-            {/* Render posts */}
             <PostContainer posts={posts} />
 
-            {/* Load more button */}
             {hasNext && <button onClick={loadMorePosts}>Load More</button>}
         </div>
     );

@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-// useLoading.js
 import { useState, useEffect } from "react";
 import { useToast } from "../components/Toast";
 
