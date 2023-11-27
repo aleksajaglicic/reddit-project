@@ -219,7 +219,6 @@ def create_post():
     except KeyError as e:
         return jsonify({"error": f"Missing required key: {str(e)}"}), 400
 
-    # Get the user ID from the JWT
     #owner_id = get_jwt_identity()
     if owner_id:
         print(owner_id)
@@ -230,15 +229,13 @@ def create_post():
     if existing_post:
         return jsonify({"error": "Post with the same title already exists for the user"}), 409
 
-    # Create a new community topic
     post = Post(
         title=title,
         content=content,
         owner_id=owner_id,
-        topic_id=topic_id  # Associate the topic with the logged-in user
+        topic_id=topic_id
     )
 
-    # Add the new topic to the database
     db.session.add(post)
     db.session.commit()
 
@@ -346,7 +343,6 @@ def create_community_topic():
     except KeyError as e:
         return jsonify({"error": f"Missing required key: {str(e)}"}), 400
 
-    # Get the user ID from the JWT
     owner_id = get_jwt_identity()
     if owner_id:
         print(owner_id)
@@ -357,14 +353,12 @@ def create_community_topic():
     if existing_topic:
         return jsonify({"error": "Topic with the same title already exists for the user"}), 409
 
-    # Create a new community topic
     topic = Topic(
         title=title,
         description=description,
-        owner_id=owner_id,  # Associate the topic with the logged-in user
+        owner_id=owner_id,
     )
 
-    # Add the new topic to the database
     db.session.add(topic)
     db.session.commit()
 

@@ -33,7 +33,6 @@ const TopicCreator = () => {
 
             if (response.ok) {
                 console.log('Topic created successfully');
-                // Handle success as needed
             } else {
                 throw new Error('Failed to create topic');
             }
@@ -66,7 +65,7 @@ const TopicCreator = () => {
                                 name="title"
                                 className="input input-bordered bg-base-300 pl-8 text-sm"
                                 placeholder="Enter community name"
-                                maxLength={18} // Adjusted the length to accommodate 'pr/' and 16 additional characters
+                                maxLength={18}
                                 value={title}
                                 onChange={handleCommunityNameChange}
                             />

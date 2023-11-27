@@ -64,7 +64,7 @@ const PostCreator = ({ userId, topicId }) => {
                                 name="title"
                                 className="input input-bordered bg-base-300 text-sm"
                                 placeholder="Enter post title"
-                                maxLength={18} // Adjusted the length to accommodate 'pr/' and 16 additional characters
+                                maxLength={18}
                                 value={title}
                                 onChange={handlePostTitleChange}
                             />
