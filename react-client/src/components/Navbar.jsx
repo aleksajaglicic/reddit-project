@@ -36,7 +36,7 @@ const Navbar = () => {
                     onClick={handleLogoClick} 
                     src="/reddit-4.svg" 
                     alt="Logo" />
-                <a className="text-xl pl-1 cursor-pointer" onClick={handleLogoClick}>PReddit</a>
+                <a className="text-xl pl-1 cursor-pointer hidden md:flex" onClick={handleLogoClick}>PReddit</a>
             </div>
             <div className="relative w-full">
                 <input
@@ -75,7 +75,7 @@ const Navbar = () => {
                     </div>
                 ) : (
                     <>
-                        <div className="mr-1 space-x-2">
+                        <div className="mr-1 space-x-2 hidden md:flex">
                         <a className="btn btn-primary rounded-2xl w-13" onClick={handleLoginClick}>Login</a>
                         <a className="btn btn-secondary rounded-2xl w-13" onClick={handleRegisterClick}>Register</a>
                         </div>

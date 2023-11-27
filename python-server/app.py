@@ -1,5 +1,5 @@
 import threading
-import datetime
+from datetime import datetime, timezone, timedelta
 import json
 from concurrent.futures import ThreadPoolExecutor
 from flask_mail import Mail, Message
@@ -69,6 +69,34 @@ def register_user_in_thread(name, last_name, address, city, phone_number, email,
 
 @app.route("/register", methods=["POST"])
 def register_user():
+    try:
+        name = request.json["name"]
+        last_name = request.json["last_name"]
+        address = request.json["address"]
+        city = request.json["city"]
+        phone_number = request.json["phone_number"]
+        email = request.json["email"]
+        password = request.json["password"]
+    except KeyError as e:
+        return jsonify({"error": f"Missing required key: {str(e)}"}), 400
+
+    user_exists = User.query.filter_by(email=email).first()
+
+    if user_exists:
+        return jsonify({"error": "A user already exists with that email."}), 409
+
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    new_user = User(name=name, last_name=last_name, address=address, city=city, phone_number=phone_number, email=email, password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    # You can include the email confirmation logic here if needed
+    # send_confirmation_email(email)
+
+    return jsonify({
+        "message": "User registered successfully."
+    })
+
     name = request.json["name"]
     last_name = request.json["last_name"]
     address = request.json["address"]
@@ -118,7 +146,6 @@ def refresh_expiring_jwts(response):
                 response.data = json.dumps(data)
         return response
     except (RuntimeError, KeyError):
-        # Case where there is not a valid JWT. Just return the original respone
         return response
 
 ### USER LOGIN ###
@@ -181,6 +208,122 @@ def user_profile():
     })
 
 ### ROUTES ###
+#@jwt_required()
+@app.route("/create_post", methods=["POST"])
+def create_post():
+    try:
+        title = request.json["title"]
+        content = request.json["content"]
+        owner_id = request.json["owner_id"]
+        topic_id = request.json["topic_id"]
+    except KeyError as e:
+        return jsonify({"error": f"Missing required key: {str(e)}"}), 400
+
+    # Get the user ID from the JWT
+    #owner_id = get_jwt_identity()
+    if owner_id:
+        print(owner_id)
+    else:
+        print("no user id")
+
+    existing_post = Post.query.filter_by(title=title).first()
+    if existing_post:
+        return jsonify({"error": "Post with the same title already exists for the user"}), 409
+
+    # Create a new community topic
+    post = Post(
+        title=title,
+        content=content,
+        owner_id=owner_id,
+        topic_id=topic_id  # Associate the topic with the logged-in user
+    )
+
+    # Add the new topic to the database
+    db.session.add(post)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Post created successfully.",
+        "post": {
+            "id": post.id,
+            "title": post.title,
+            "description": post.content,
+            "owner_id": post.owner_id,
+        },
+    })
+
+@app.route("/", methods=["GET"])
+def get_random_posts():
+    try:
+        # Get a random sample of posts from different topics
+        posts = (
+            db.session.query(Post)
+            .order_by(db.func.random())
+            .limit(10)
+            .all()
+        )
+
+        # Serialize the posts
+        serialized_posts = [
+            {
+                "id": post.id,
+                "title": post.title,
+                "content": post.content,
+                # Add other fields as needed
+            }
+            for post in posts
+        ]
+
+        return jsonify({"posts": serialized_posts})
+
+    except Exception as e:
+        # Handle exceptions
+        print(e)
+        return jsonify({"error": "Internal Server Error"}), 500
+
+@app.route("/pr/<string:title>", methods=["GET"])
+@jwt_required()
+def topic_page(title):
+    # Fetch the topic data based on the title from the server
+    topic = db.session.query(Topic).filter_by(title=title).first()
+
+    if not topic:
+        return jsonify({"error": "no topic found"})
+
+    # Assuming you want to show 10 posts per page
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+
+    # Query posts related to the topic
+    posts = db.session.query(Post).filter_by(topic_id=topic.id).paginate(page=page, per_page=per_page, error_out=False)
+
+    # Extract relevant post information
+    formatted_posts = [
+        {
+            "id": post.id,
+            "title": post.title,
+            "owner_id": post.owner_id,
+            "topic_id": post.topic_id,
+            "content": post.content,
+            "like_number": post.like_number,
+            "like_number": post.like_number,
+            # Add other fields as needed
+        }
+        for post in posts.items
+    ]
+
+    # Return posts as part of the response
+    response_data = {
+        "topic": {
+            "title": topic.title,
+            "description": topic.description,
+            # Add other topic fields as needed
+        },
+        "posts": formatted_posts,
+        "has_next": posts.has_next,
+    }
+
+    return jsonify(response_data)
 
 @app.route("/protected", methods=["GET"])
 @jwt_required()
@@ -193,6 +336,47 @@ def logout():
     response = jsonify({"message": "logout succesful"})
     unset_jwt_cookies(response)
     return response
+
+@app.route("/create_topic", methods=["POST"])
+@jwt_required()
+def create_community_topic():
+    try:
+        title = request.json["title"]
+        description = request.json["content"]
+    except KeyError as e:
+        return jsonify({"error": f"Missing required key: {str(e)}"}), 400
+
+    # Get the user ID from the JWT
+    owner_id = get_jwt_identity()
+    if owner_id:
+        print(owner_id)
+    else:
+        print("no user id")
+
+    existing_topic = Topic.query.filter_by(title=title).first()
+    if existing_topic:
+        return jsonify({"error": "Topic with the same title already exists for the user"}), 409
+
+    # Create a new community topic
+    topic = Topic(
+        title=title,
+        description=description,
+        owner_id=owner_id,  # Associate the topic with the logged-in user
+    )
+
+    # Add the new topic to the database
+    db.session.add(topic)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Community topic created successfully.",
+        "topic": {
+            "id": topic.id,
+            "title": topic.title,
+            "description": topic.description,
+            "owner_id": topic.owner_id,
+        },
+    })
 
 @app.route("/create_comment", methods=["POST"])
 @jwt_required()

@@ -5,14 +5,14 @@ export default {
     themes: [
       {
         mytheme: {
-          "primary": "#14b8a6",
-          "secondary": "#eab308",
-          "accent": "#e11d48",
+          "primary": "#610C9F",
+          "secondary": "#b91c1c",
+          "accent": "#34d399",
           "neutral": "#f3f4f6",
           "base-100": "#1b1b1c",
-          "info": "#ffffff",
+          "info": "#f3effe",
           "success": "#4ade80",
-          "warning": "#b91c1c",
+          "warning": "#92400e",
           "error": "#292524",
         }
       }

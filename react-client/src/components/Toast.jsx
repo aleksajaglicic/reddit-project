@@ -61,7 +61,7 @@ const ToastProvider = ({ children }) => {
                         className={`toast ${toast.variant} ${toast.dismissing ? 'fade-out' : ''}`}
                         style={{ bottom: `${index * 70}px` }}
                     >
-                        <div className="alert alert-info">
+                        <div className="alert alert-warning">
                             <div className="toast-title">{toast.title}</div>
                             <div className="toast-description">{toast.description}</div>
                             <button className="toast-dismiss" onClick={() => removeToast(toast.id)}>

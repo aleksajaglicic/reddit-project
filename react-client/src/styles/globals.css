@@ -78,13 +78,41 @@ body {
     margin: 0;
     padding: 0;
 }
+
+.background_root__yzs99 {
+    background:linear-gradient(90deg,#161616 17px,transparent 1%) 50%,linear-gradient(#161616 17px,transparent 1%) 50%,#3d3d3d;
+    background-size:18px 18px
+}
+
+.gradient-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    background: linear-gradient(
+    rgba(255, 255, 255, 0) 70%,
+    rgba(255, 255, 255, 1) 100%
+    );
+    transition: background 0.3s ease-out;
+}
+
+.expanded-text {
+    -webkit-line-clamp: unset;
+    background: linear-gradient(
+    rgba(255, 255, 255, 0) 70%,
+    rgba(255, 255, 255, 1) 100%
+    );
+    transition: height 0.3s ease-out, background 0.3s ease-out;
+}
+
+
 .navbar {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 60px; 
-    background: rgba(20, 20, 21, 0.5);
+    background: rgba(20, 20, 21, 0.3);
 }
 
 .navbar::before {
