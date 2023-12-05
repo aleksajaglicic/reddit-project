@@ -250,7 +250,6 @@ def create_post():
 @app.route("/", methods=["GET"])
 def get_random_posts():
     try:
-        # Get a random sample of posts from different topics
         posts = (
             db.session.query(Post)
             .order_by(db.func.random())
@@ -258,13 +257,11 @@ def get_random_posts():
             .all()
         )
 
-        # Serialize the posts
         serialized_posts = [
             {
                 "id": post.id,
                 "title": post.title,
                 "content": post.content,
-                # Add other fields as needed
             }
             for post in posts
         ]

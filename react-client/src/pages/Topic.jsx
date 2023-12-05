@@ -10,15 +10,24 @@ const TopicPage = () => {
     const [hasNext, setHasNext] = useState(false);
 
     useEffect(() => {
-        fetch(`http://localhost:5000/pr/${title}?page=${page}`)
-        .then((response) => response.json())
-        .then((data) => {
-            setTopic(data.topic);
-            setPosts((prevPosts) => [...prevPosts, ...data.posts]);
-            setHasNext(data.has_next);
-        })
-        .catch((error) => console.error("Error fetching topic:", error));
-    }, [title, page]);
+        fetch("http://localhost:5000/pr/${title}")
+            .then((response) => response.json())
+            .then((data) => {
+                setPosts(data.posts);
+            })
+            .catch((error) => console.error("Error fetching random posts:", error));
+    }, []);
+
+    // useEffect(() => {
+    //     fetch(`http://localhost:5000/pr/${title}?page=${page}`)
+    //     .then((response) => response.json())
+    //     .then((data) => {
+    //         setTopic(data.topic);
+    //         setPosts((prevPosts) => [...prevPosts, ...data.posts]);
+    //         setHasNext(data.has_next);
+    //     })
+    //     .catch((error) => console.error("Error fetching topic:", error));
+    // }, [title, page]);
 
     const loadMorePosts = () => {
         setPage((prevPage) => prevPage + 1);
