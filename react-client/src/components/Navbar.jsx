@@ -21,6 +21,11 @@ const Navbar = () => {
         navigate("/");
     }
 
+    const handleLogoutClick = () => {
+        logout()
+        navigate("/");
+    }
+
     return (
         <div 
         className="navbar 
@@ -70,7 +75,7 @@ const Navbar = () => {
                             </li>
                             <li><a>My Threads</a></li>
                             <li><a>My Posts</a></li>
-                            <li><a className="text-red-500" onClick={logout}>Logout</a></li>
+                            <li><a className="text-red-500" onClick={handleLogoutClick}>Logout</a></li>
                         </ul>
                     </div>
                 ) : (

@@ -46,6 +46,16 @@ class Post(db.Model):
     likes_users = db.relationship('UserLikes', back_populates='post', cascade="all, delete-orphan")
 
     @property
+    def owner_name(self):
+        user = db.session.query(User).filter_by(id=self.owner_id).first()
+        return user.name if user else None
+
+    @property
+    def topic_name(self):
+        topic = db.session.query(Topic).filter_by(id=self.topic_id).first()
+        return topic.title if topic else None
+
+    @property
     def num_likes(self):
         return len(self.likes_users)
     

@@ -1,24 +1,45 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
-import Post from "../components/Post";
 import { motion as m } from "framer-motion";
 import PostContainer from "../components/PostContainer";
-import { ToastProvider } from "../components/Toast";
-import "@codaworks/react-glow"
-import { Glow, GlowCapture } from "@codaworks/react-glow";
-//import Post from '../components/Post'
+import InfiniteScroll from "react-infinite-scroll-component";
 
 const Home = () => {
     const [posts, setPosts] = useState([]);
+    const [page, setPage] = useState(1);
+    const [hasNext, setHasNext] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetch("http://localhost:5000/")
+    const fetchPosts = (pageNumber) => {
+        fetch(`http://localhost:5000/?page=${pageNumber}`)
             .then((response) => response.json())
             .then((data) => {
-                setPosts(data.posts);
+                setPosts((prevPosts) => {
+                    const uniquePosts = data.posts
+                    ? data.posts.filter(
+                        (newPost) =>
+                        !prevPosts.some((prevPost) => prevPost.id === newPost.id)
+                    ) : [];
+                    return [...prevPosts, ...uniquePosts];
+                });
+                setHasNext(data.has_next);
+                setLoading(false);
             })
             .catch((error) => console.error("Error fetching random posts:", error));
-    }, []);
+    };
+    
+
+    useEffect(() => {
+        fetchPosts(page);
+    }, [page]);
+
+    const loadMorePosts = () => {
+        if (!loading && hasNext) {
+            setLoading(true);
+            fetchPosts(page + 1);
+            setPage(page + 1);
+        }
+    };
 
     return (
         <m.div
@@ -27,9 +48,15 @@ const Home = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.75 }}
         >
-            <PostContainer posts={posts} />
+            <InfiniteScroll
+                dataLength={posts.length}
+                next={loadMorePosts}
+                hasMore={hasNext && !loading}
+                loader={<h4>Loading...</h4>}
+            >
+                <PostContainer posts={posts} title={null}/>
+            </InfiniteScroll>
         </m.div>
     );
 };
-
-export default Home
+export default Home;

@@ -6,23 +6,38 @@ import { ToastProvider } from "./Toast"
 import TopicCreator from "./TopicCreator"
 import "@codaworks/react-glow"
 import { Glow, GlowCapture } from "@codaworks/react-glow"
+import PostCreator from "./PostCreator"
 
-const PostContainer = ({ posts }) => {
+const PostContainer = ({ posts, title, topic_id}) => {
     const { user } = useAuth();
-
+    console.log({"topic_id": topic_id})
+    const isHomePage = title == null;
+    const displayTopicCreation = title === null && user !== undefined;
+    const displayPostCreation = title !== null && user !== undefined && user !== null;
+    const displayTitle = !displayTopicCreation && !displayPostCreation;
     return (
         <div className="container items-center max-w-7xl mx-auto">
-            {user && (
-                <div className="card w-200 flex mt-2">
-                    <div className="card-body space-y-5">
-                        <div className="card-title">
-                        <TopicCreator />
+            <div className="card-body space-y-5">
+                {displayTopicCreation && user !== null && (
+                    <div className="card w-200 flex mt-2">
+                        <div className="card-body space-y-5">
+                            <div className="card-title">
+                            <TopicCreator />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-            <div className="text-4xl md:text-7xl font-bold mt-2 mb-2 ml-10 mr-6">Topics</div>
-            <div className="card-body space-y-5">
+                )}
+                {displayPostCreation && (
+                    <div>
+                        <div className="text-4xl md:text-7xl font-bold mt-2 mb-2 mr-6">pr/{title}</div>
+                        <PostCreator owner_id={(user ? user.id : null)} topic_id={topic_id}/>
+                    </div>
+                )}
+                {!displayTopicCreation && !displayPostCreation ? (
+                    <div className="text-4xl md:text-7xl font-bold mt-2 mb-2 mr-6">{isHomePage ? "Topics" : title}</div>
+                ) : (
+                    <div className="text-4xl md:text-7xl font-bold mt-2 mb-2 mr-6">Topic</div>
+                )}
                 {posts.map((post) => (
                     <Post
                         key={post.id}
@@ -31,6 +46,8 @@ const PostContainer = ({ posts }) => {
                         owner_id={post.owner_id}
                         topic_id={post.topic_id}
                         content={post.content}
+                        topic_name={post.topic_name}
+                        owner_name={post.owner_name}
                     />
                 ))}
             </div>

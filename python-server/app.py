@@ -63,7 +63,6 @@ def register_user_in_thread(name, last_name, address, city, phone_number, email,
     db.session.add(new_user)
     db.session.commit()
 
-    # Trigger email confirmation in a separate thread
     user_thread = threading.Thread(target=send_confirmation_email, args=(email,))
     user_thread.start()
 
@@ -206,7 +205,7 @@ def user_profile():
     })
 
 ### ROUTES ###
-#@jwt_required()
+@jwt_required()
 @app.route("/create_post", methods=["POST"])
 def create_post():
     try:
@@ -214,6 +213,7 @@ def create_post():
         content = request.json["content"]
         owner_id = request.json["owner_id"]
         topic_id = request.json["topic_id"]
+        post_id = request.json["post_id"]
     except KeyError as e:
         return jsonify({"error": f"Missing required key: {str(e)}"}), 400
 
@@ -247,68 +247,111 @@ def create_post():
         },
     })
 
+@app.route("/<int:page>/<int:per_page>", methods=["GET"])
+def home_posts_infinite(page=1, per_page=4):
+    posts = posts.paginate(page=page, per_page=per_page)
+    
+    return jsonify({
+        'total': total,
+        'page': page,
+        'per_page': per_page,
+        'data': [{
+            'id': p.id,
+            'fullname': p.name,
+            'email': p.email,
+            'password': p.password,
+            'photo': p.photo
+        } for p in posts.items]
+    })
+
 @app.route("/", methods=["GET"])
 def get_random_posts():
     try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 4
+
         posts = (
             db.session.query(Post)
-            .order_by(db.func.random())
-            .limit(10)
-            .all()
+            .paginate(page=page, per_page=per_page, error_out=False)
         )
 
-        serialized_posts = [
+        formatted_posts = [
             {
                 "id": post.id,
                 "title": post.title,
+                "owner_id": post.owner_id,
+                "topic_id": post.topic_id,
                 "content": post.content,
+                "num_likes": post.num_likes,
+                "num_comments": post.num_comments,
+                "timestamp": post.timestamp,
+                "owner_name": post.owner_name,
+                "topic_name": post.topic_name
             }
-            for post in posts
+            for post in posts.items
         ]
 
-        return jsonify({"posts": serialized_posts})
+        response_data = {
+            "posts": formatted_posts,
+            "has_next": posts.has_next,
+        }
+
+        return jsonify(response_data)
 
     except Exception as e:
-        # Handle exceptions
         print(e)
         return jsonify({"error": "Internal Server Error"}), 500
 
 @app.route("/pr/<string:title>", methods=["GET"])
-@jwt_required()
 def topic_page(title):
-    topic = db.session.query(Topic).filter_by(title=title).first()
+    try:
+        topic = db.session.query(Topic).filter_by(title=title).first()
 
-    if not topic:
-        return jsonify({"error": "no topic found"})
+        if not topic:
+            return jsonify({"error": "no topic found"})
 
-    page = request.args.get('page', 1, type=int)
-    per_page = 10
+        page = request.args.get('page', 1, type=int)
+        per_page = 4
 
-    posts = db.session.query(Post).filter_by(topic_id=topic.id).paginate(page=page, per_page=per_page, error_out=False)
+        posts = (
+            db.session.query(Post)
+            .filter_by(topic_id=topic.id)
+            .distinct(Post.id)
+            .order_by(Post.id, Post.timestamp.desc())
+            .paginate(page=page, per_page=per_page, error_out=False)
+        )
 
-    formatted_posts = [
-        {
-            "id": post.id,
-            "title": post.title,
-            "owner_id": post.owner_id,
-            "topic_id": post.topic_id,
-            "content": post.content,
-            "like_number": post.like_number,
-            "like_number": post.like_number,
+        formatted_posts = [
+            {
+                "id": post.id,
+                "title": post.title,
+                "owner_id": post.owner_id,
+                "topic_id": post.topic_id,
+                "content": post.content,
+                "num_likes": post.num_likes,
+                "num_comments": post.num_comments,
+                "timestamp": post.timestamp,
+                "owner_name": post.owner_name,
+                "topic_name": post.topic_name
+            }
+            for post in posts.items
+        ]
+
+        response_data = {
+            "topic": {
+                "id": topic.id,
+                "title": topic.title,
+                "description": topic.description,
+            },
+            "posts": formatted_posts,
+            "has_next": posts.has_next,
         }
-        for post in posts.items
-    ]
 
-    response_data = {
-        "topic": {
-            "title": topic.title,
-            "description": topic.description,
-        },
-        "posts": formatted_posts,
-        "has_next": posts.has_next,
-    }
+        return jsonify(response_data)
 
-    return jsonify(response_data)
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "Internal Server Error"}), 500
 
 @app.route("/protected", methods=["GET"])
 @jwt_required()

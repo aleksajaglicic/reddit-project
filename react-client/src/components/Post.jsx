@@ -10,9 +10,8 @@ import {
 } from "@heroicons/react/20/solid";
 import { Link } from "react-router-dom";
 
-const Post = ({ id, title, owner_id, topic_id, content, num_likes, num_comments }) => {
+const Post = ({ id, title, owner_id, owner_name, topic_id, content, num_likes, num_comments, topic_name }) => {
   const [expanded, setExpanded] = useState(false);
-
   const toggleExpansion = () => {
     setExpanded(!expanded);
   };
@@ -37,11 +36,11 @@ const Post = ({ id, title, owner_id, topic_id, content, num_likes, num_comments 
       <div className="card-body">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
-            <Link to={`/pr/${topic_id}`} className="text-sm underline">
-              pr/{title}
+            <Link to={`/pr/${topic_name}`} className="text-sm underline">
+              pr/{topic_name}
             </Link>
             <span className="mx-1 text-xs">•</span>
-            <p className="text-sm">Published by: User {owner_id}</p>
+            <p className="text-sm">Published by: {owner_name}</p>
           </div>
           <button
             className="btn btn-ghost"

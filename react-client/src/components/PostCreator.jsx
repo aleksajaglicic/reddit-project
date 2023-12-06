@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useToast } from '../components/Toast';
 import {v4 as uuidv4} from "uuid"
-const PostCreator = ({ userId, topicId }) => {
+const PostCreator = ({ owner_id, topic_id }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
 
@@ -20,7 +20,7 @@ const PostCreator = ({ userId, topicId }) => {
 
     const handleCreatePost = async () => {
         try {
-            const postId = uuidv4();
+            const post_id = uuidv4();
 
             //const token = localStorage.getItem('access_token');
             //console.log(token);
@@ -30,11 +30,16 @@ const PostCreator = ({ userId, topicId }) => {
                     'Content-Type': 'application/json',
                     
                 },
-                body: JSON.stringify({ postId, title, content, userId, topicId }),
+                body: JSON.stringify({ post_id, title, content, owner_id, topic_id }),
             });
 
             if (response.ok) {
                 console.log('Post created successfully');
+                toast({
+                    title: 'Success',
+                    description: 'Post created successfully',
+                    variant: 'success',
+                });
             } else {
                 throw new Error('Failed to create post');
             }
@@ -49,8 +54,8 @@ const PostCreator = ({ userId, topicId }) => {
     };
 
     return (
-        <div className="card w-full h-fit bg-base-100 rounded-2xl relative">
-            <div className="card-body">
+        <div className="container items-center max-w-7xl mx-auto mt-4 bg-base-100 rounded-2xl">
+            <div className="card-body min-w-fit">
                 <div className="card-title text-4xl">Create a post!</div>
                 <div className="mt-2 space-y-4">
                     <div className="flex flex-col">
@@ -78,8 +83,8 @@ const PostCreator = ({ userId, topicId }) => {
                             rows="4"
                             maxLength={200}
                             value={content}
-                            className="textarea textarea-bordered h-11 bg-base-300"
-                            placeholder="Enter community description"
+                            className="textarea textarea-bordered h-30 bg-base-300 max-w-full"
+                            placeholder="Write your post!"
                             onChange={handleDescriptionChange}
                             style={{ resize: 'none' }}
                         />
