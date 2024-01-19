@@ -1,17 +1,23 @@
 /* eslint-disable no-unused-vars */
-import React, { useState } from 'react';
-import { useToast } from '../components/Toast';
+import React, { useState, ChangeEvent } from 'react';
+import { useToast } from './Toast';
 import {v4 as uuidv4} from "uuid"
-const PostCreator = ({ owner_id, topic_id }) => {
+
+interface PostCreatorProps {
+    owner_id: string;
+    topic_id: string;
+}
+
+const PostCreator: React.FC<PostCreatorProps> = ({ owner_id, topic_id }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
 
-    const handleDescriptionChange = (event) => {
+    const handleDescriptionChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
         const limitedDescription = event.target.value.slice(0, 300);
         setContent(limitedDescription);
     };
-
-    const handlePostTitleChange = (event) => {
+    
+    const handlePostTitleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const limitedPostTitle = event.target.value.slice(0, 16);
         setTitle(limitedPostTitle);
     };
@@ -80,7 +86,7 @@ const PostCreator = ({ owner_id, topic_id }) => {
                             Content
                         </label>
                         <textarea
-                            rows="4"
+                            rows={4}
                             maxLength={200}
                             value={content}
                             className="textarea textarea-bordered h-30 bg-base-300 max-w-full"
@@ -90,7 +96,7 @@ const PostCreator = ({ owner_id, topic_id }) => {
                         />
                     </div>
                     <button
-                        className="btn btn-primary w-xs"
+                        className="btn btn-primary rounded-2xl w-xs"
                         onClick={handleCreatePost}
                     >
                         Create Post

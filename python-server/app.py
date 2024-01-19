@@ -12,9 +12,10 @@ from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import unset_jwt_cookies
-from database import init_db, User, Topic, Post, Comment, db
+from database import init_db, User, Topic, Post, Comment, UserSubscriptions, db
 from config import ApplicationConfig
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import SQLAlchemyError
 from uuid import uuid4
 
 # db = SQLAlchemy()
@@ -353,6 +354,74 @@ def topic_page(title):
         print(e)
         return jsonify({"error": "Internal Server Error"}), 500
 
+@app.route("/pr/<string:title>/<string:post_id>", methods=["GET"])
+def get_post_and_comments(title, post_id):
+    try:
+        topic = db.session.query(Topic).filter_by(title=title).first()
+
+        if not topic:
+            return jsonify({"error": "no topic found"})
+
+        post = db.session.query(Post).filter_by(id=post_id, topic_id=topic.id).first()
+
+        if not post:
+            return jsonify({"error": "no post found"})
+
+        comments = (
+            db.session.query(Comment)
+            .filter_by(post_id=post.id)
+            .order_by(Comment.timestamp.desc())
+            .all()
+        )
+
+        formatted_comments = [
+        {
+        "id": comment.id,
+        "content": comment.content,
+        "owner_id": comment.user_id,
+        "post_id": comment.post_id,
+        "timestamp": comment.timestamp,
+        "owner_name": comment.owner_name,
+        "replies": [
+            {
+                "id": reply.id,
+                "content": reply.content,
+                "owner_id": reply.user_id,
+                "post_id": reply.post_id,
+                "timestamp": reply.timestamp,
+                "owner_name": reply.owner_name,
+                # Include additional fields if needed
+            }
+            for reply in comment.replies
+        ],
+    }
+    for comment in comments
+]
+
+        response_data = {
+            "post": {
+                "id": post.id,
+                "title": post.title,
+                "owner_id": post.user_id,
+                "topic_id": post.topic_id,
+                "content": post.content,
+                "num_likes": post.num_likes,
+                "num_comments": post.num_comments,
+                "timestamp": post.timestamp,
+                "owner_name": post.owner_name,
+                "topic_name": post.topic_name,
+            },
+            "comments": formatted_comments,
+        }
+
+        return jsonify(response_data)
+
+    except SQLAlchemyError as e:
+        db.session.rollback()  # Rollback the session to prevent further issues
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
 @app.route("/protected", methods=["GET"])
 @jwt_required()
 def protected():
@@ -403,6 +472,44 @@ def create_community_topic():
         },
     })
 
+@app.route("/subscribe", methods=["POST"])
+@jwt_required()
+def subscribe_topic():
+    try:
+        user_id = get_jwt_identity();
+        topic_id = request.json["topic_id"]
+        print("this is the user id: ", user_id);
+        print("this is the topic id: ", topic_id)
+    except KeyError as e:
+        return jsonify({"error": f"Missing required key: {str(e)}"}), 400
+
+    user_subscription = UserSubscriptions.query.filter_by(user_id=user_id, topic_id=topic_id).first()
+
+    if user_subscription:
+        return jsonify({"message": "User is already subscribed to this topic"}), 200
+
+    new_subscription = UserSubscriptions(user_id=user_id, topic_id=topic_id)
+    db.session.add(new_subscription)
+    db.session.commit()
+
+    return jsonify({"message": "User subscribed to the topic successfully"}), 200
+
+@app.route("/isSubscribed", methods=["POST"])
+@jwt_required()
+def is_subscribed():
+    try:
+        user_id = get_jwt_identity();
+        topic_id = request.json["topic_id"]
+    except KeyError as e:
+        return jsonify({"error": f"Missing required key: {str(e)}"}), 400
+
+    user_subscription = UserSubscriptions.query.filter_by(user_id=user_id, topic_id=topic_id).first()
+
+    if user_subscription:
+        return jsonify({"isSubscribed": True}), 200
+    else:
+        return jsonify({"isSubscribed": False}), 200
+
 @app.route("/create_comment", methods=["POST"])
 @jwt_required()
 def create_comment_route():
@@ -414,6 +521,9 @@ def create_comment_route():
 @jwt_required()
 def upvote_comment_route():
     comment_id = request.json["comment_id"]
+
+    existing_comment = Comment.query.filter_by(id = comment_id).first()
+
     return upvote_comment(comment_id)
 
 @app.route("/downvote_comment", methods=["POST"])

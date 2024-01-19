@@ -1,10 +1,16 @@
 // eslint-disable-next-line no-unused-vars
 import React from "react"
 import { useAuth } from "../contexts/AuthContext"
-import { MagnifyingGlassIcon } from "@heroicons/react/20/solid"
+import { MagnifyingGlassIcon, Bars2Icon } from "@heroicons/react/20/solid"
 import { useNavigate } from "react-router-dom"
 
-const Navbar = () => {
+interface NavbarProps {
+    style?: React.CSSProperties & {
+        "--navbar-bg"?: string;
+    };
+}
+
+const Navbar: React.FC<NavbarProps> = ({ style }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     console.log("User in Navbar:", user);
@@ -34,14 +40,17 @@ const Navbar = () => {
             border-opacity-75
             bg-opacity-7
             w-full z-50"
-            style={{ "--navbar-bg": "var(--bg-base-300)" }}>
+            style={style}>
             <div className="navbar-start">
                 <img 
                     className="w-7 p-1 ml-2 cursor-pointer" 
                     onClick={handleLogoClick} 
                     src="/reddit-4.svg" 
                     alt="Logo" />
-                <a className="text-xl pl-1 cursor-pointer hidden md:flex" onClick={handleLogoClick}>PReddit</a>
+                <a className="text-xl pl-1 pr-1 cursor-pointer hidden md:flex" onClick={handleLogoClick}>PReddit</a>
+                <label htmlFor="my-drawer" className="btn btn-ghost w-5 h-5">
+                    <Bars2Icon className="w-5 h-5 text-gray-400 ml-4" />
+                </label>
             </div>
             <div className="relative w-full">
                 <input

@@ -14,12 +14,9 @@ const Login = () => {
 
     const [handleLogin, loading] = useLoading(
         async () => {
-        await login(email, password);
+            await login(email, password);
         },
-        1000,
-        () => {
-        navigate("/");
-        }
+        { minDuration: 1000, navigateFunction: () => navigate("/") }
     );
 
     return (

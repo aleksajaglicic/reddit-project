@@ -1,17 +1,17 @@
 /* eslint-disable no-unused-vars */
 import React, { useState } from 'react'
-import { useToast } from "../components/Toast"
+import { useToast } from "./Toast"
 
 const TopicCreator = () => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
 
-    const handleDescriptionChange = (event) => {
+    const handleDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         const limitedDescription = event.target.value.slice(0, 165);
         setContent(limitedDescription);
     };
 
-    const handleCommunityNameChange = (event) => {
+    const handleCommunityNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const limitedCommunityName = event.target.value.slice(0, 16);
         setTitle(limitedCommunityName);
     };
@@ -76,7 +76,7 @@ const TopicCreator = () => {
                             Description
                         </label>
                         <textarea
-                            rows="4"
+                            rows={4}
                             maxLength={200}
                             value={content}
                             className="textarea textarea-bordered h-11 bg-base-300"

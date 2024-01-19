@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useState } from "react";
+import React, { ChangeEvent, useState } from "react";
 import { motion as m } from "framer-motion";
 import { useToast } from "../components/Toast";
 
@@ -16,7 +16,7 @@ const Register = () => {
 
     const toast = useToast();
 
-    const handleChange = (e) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
         setFormData((prevData) => ({ ...prevData, [id]: value }));
     };
