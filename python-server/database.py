@@ -45,6 +45,7 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow(), nullable=False)
     likes_users = db.relationship('UserLikes', back_populates='post', cascade="all, delete-orphan")
 
+
     @property
     def owner_name(self):
         user = db.session.query(User).filter_by(id=self.owner_id).first()
@@ -74,18 +75,25 @@ class Comment(db.Model):
     topic = db.relationship('Topic', backref='comments')
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     likes_users = db.relationship('UserLikes', back_populates='comment', cascade="all, delete-orphan")
+    parent_comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True)
+    replies = db.relationship('Comment', backref=db.backref('parent_comment', remote_side=[id]))
 
     @property
     def num_likes(self):
         return len(self.likes_users)
+    
+    @property
+    def owner_name(self):
+        user = db.session.query(User).filter_by(id=self.user_id).first()
+        return user.name if user else None
 
 class UserLikes(db.Model):
     __tablename__ = "userLikes"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(32), db.ForeignKey('users.id'))
-    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'))
+    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True)
     comment = db.relationship('Comment', back_populates='likes_users')
-    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=True)
     like_status = db.Column(db.Boolean)
     user = db.relationship('User', back_populates='likes')
     post = db.relationship('Post', back_populates='likes_users')

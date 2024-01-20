@@ -14,6 +14,7 @@ import { ToastProvider } from './components/Toast';
 import PostCreator from './components/PostCreator';
 import Sidebar from './components/Sidebar';
 import PostPage from './pages/PostPage';
+import CommentCreator from './components/CommentCreator';
 
 const Layout = () => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -46,6 +47,7 @@ const Layout = () => {
                 <Route path="/pr/:title" element={<Topic />} />
                 <Route path="/pr/:title/:post_id" element={<PostPage />} />
                 <Route path="/post_creator" element={<PostCreator owner_id='' topic_id='' />} />
+                <Route path="/comment" element={<Comment/>} />
                 </Routes>
             </div>
             </ScrollToTop>

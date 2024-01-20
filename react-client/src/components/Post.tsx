@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   EllipsisVerticalIcon,
@@ -8,7 +8,8 @@ import {
   ArrowUpTrayIcon,
   ChatBubbleLeftRightIcon,
 } from "@heroicons/react/20/solid";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 interface PostProps {
   id: string;
@@ -29,20 +30,99 @@ const Post: React.FC<PostProps> = ({
   owner_name,
   topic_id,
   content,
-  num_likes = 0,
+  num_likes,
   num_comments = 0,
   topic_name,
 }) => {
+  const { user } = useAuth()
   const [expanded, setExpanded] = useState(false);
+  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [hasDownvoted, setHasDownvoted] = useState(false);
+  const [isUsersPost, setIsUsersPost] = useState(false);
+  const [likesCount, setLikesCount] = useState(num_likes ?? 0);
+  const navigate = useNavigate();
+
   const toggleExpansion = () => {
     setExpanded(!expanded);
   };
 
-  const text =
-    "If a dog chews shoes whose shoes does he choose? If the text is long, it will fade downwards. Click to expand...";
+    const handleUpvote = async () => {
+      try {
+        const authToken = localStorage.getItem('access_token');
+        await fetch(`http://localhost:5000/upvote`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ user_id: user?.id, post_id: id }), // Send post_id instead of title
+        });
+
+        setHasUpvoted(!hasUpvoted);
+        
+        setLikesCount(hasUpvoted ? likesCount - 1 : likesCount + 1); // Update likes count
+      } catch (error) {
+        console.error("Error upvoting post:", error);
+      }
+    };
+    
+    const handleDownvote = async () => {
+      try {
+        const authToken = localStorage.getItem('access_token');
+
+        await fetch(`http://localhost:5000/downvote`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+
+          },
+          body: JSON.stringify({ post_id: id }), // Send post_id instead of title
+        });
+        setHasDownvoted(!hasDownvoted);
+        setLikesCount(hasDownvoted ? likesCount + 1 : likesCount - 1); // Update likes count
+      } catch (error) {
+        console.error("Error downvoting post:", error);
+      }
+    };
+    
+    const handlePostDeletion = async () => {
+      try {
+          const authToken = localStorage.getItem('access_token');
+          if (user) {
+              const response = await fetch('http://localhost:5000/delete_post', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${authToken}`,
+                  },
+                  body: JSON.stringify({ user_id: user.id, post_id: id }),
+              });
+
+              if (response.ok) {
+                  console.log('User successfully deleted the post');
+                  navigate(`/pr/${topic_name}`);
+
+              } else {
+                  const errorData = await response.json();
+                  console.error('Error during deletion:', errorData);
+              }
+          }
+      } catch (error) {
+          console.error('Error during deletion:', error);
+      }
+    } 
+  
+    useEffect(() => {
+      if (user?.id === String(owner_id)) {
+        setIsUsersPost(true);
+      } else {
+        setIsUsersPost(false);
+      }
+    }, [user, id]);
 
   return (
-    <Link to={`/pr/${topic_name}/${id}`}>
+    // <Link to={`/pr/${topic_name}/${id}`}>
       <motion.div
         className="card w-full bg-base-100 rounded-2xl overflow-hidden"
         initial={{ height: "fit-content", backgroundSize: "70% 100%" }}
@@ -58,34 +138,57 @@ const Post: React.FC<PostProps> = ({
               <span className="mx-1 text-xs">•</span>
               <p className="text-sm">Published by: {owner_name}</p>
             </div>
-            <button
-              className="btn btn-ghost"
-              onClick={() => alert(`Edit post ${id}`)}
-            >
-              <EllipsisVerticalIcon className="w-5 h-5" />
-            </button>
+            {isUsersPost ? (
+              <div className="ml-4 mt-4 dropdown dropdown-end">
+                <button
+                    className="btn btn-ghost">
+                    <EllipsisVerticalIcon className="w-5 h-5" />
+                </button>
+                    <ul
+                    tabIndex={0}
+                    className="menu 
+                        menu-sm 
+                        dropdown-content 
+                        mt-3 z-[1] 
+                        p-2 shadow 
+                        bg-base-300 
+                        rounded-box w-52">
+                        <li><a className="text-red-500" onClick={handlePostDeletion}>Delete</a></li>
+                    </ul>
+                </div>
+            ) : ""}
           </div>
-          <h2 className="card-title text-xl md:text-2xl font-semibold mb-2">
+          <h2 className="card-title text-xl md:text-2xl font-semibold mb-4">
             {title}
           </h2>
           <motion.p
-            className={`mt-2 ${
-              text.length > 400 ? (expanded ? "" : "line-clamp-3 cursor-pointer") : ""
+            className={`mt-2 mb-4 ${
+              content.length > 400 ? (expanded ? "" : "line-clamp-3 cursor-pointer") : ""
             }`}
-            onClick={text.length > 400 ? toggleExpansion : undefined}
+            onClick={content.length > 400 ? toggleExpansion : undefined}
           >
             {content}
           </motion.p>
           <div className="flex items-center space-x-4 mt-2">
-            <div className="bg-info text-base-300 rounded-2xl font-bold text-sm flex items-center justify-center">
-              <button className="btn btn-ghost mr-2 rounded-2xl w-4 h-4">
-                <ArrowUpIcon className="stroke-2 w-4 h-4 fill-base-300" />
-              </button>
-              {num_likes}
-              <button className="btn btn-ghost ml-2 rounded-2xl w-4 h-4">
-                <ArrowDownIcon className="stroke-2 w-4 h-4 fill-base-300" />
-              </button>
-            </div>
+          <div className="bg-info text-base-300 rounded-2xl font-bold text-sm flex items-center justify-center">
+            <button
+              className={`btn btn-ghost mr-2 rounded-2xl w-4 h-4 ${
+                hasUpvoted ? "fill-red-700" : "fill-base-300"
+              }`}
+              onClick={handleUpvote}
+            >
+              <ArrowUpIcon className={`stroke-2 w-4 h-4 ${hasUpvoted ? "fill-red-700" : "fill-base-300"}`} />
+            </button>
+            {likesCount}
+            <button
+              className={`btn btn-ghost ml-2 rounded-2xl w-4 h-4 ${
+                hasDownvoted ? "text-error" : ""
+              }`}
+              onClick={handleDownvote}
+            >
+              <ArrowDownIcon className={`stroke-2 w-4 h-4 ${hasDownvoted ? "fill-red-700" : "fill-base-300"}`} />
+            </button>
+          </div>
             <button className="btn btn-secondary rounded-2xl">
               <ChatBubbleLeftRightIcon className="w-5 h-5" />
               <p className="hidden md:flex">{num_comments} Comments</p>
@@ -97,7 +200,7 @@ const Post: React.FC<PostProps> = ({
           </div>
         </div>
       </motion.div>
-    </Link>
+    // </Link>
   );
 };
 

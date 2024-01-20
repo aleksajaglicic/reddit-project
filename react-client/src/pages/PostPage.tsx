@@ -2,67 +2,94 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Comment from '../components/Comment';
+import Post from "../components/Post";
+import CommentCreator from '../components/CommentCreator';
+
+interface Reply {
+  id: string;
+  owner_id: string;
+  topic_id: string;
+  text: string;
+  owner_name: string;
+}
+
+interface CommentData {
+  id: string;
+  owner_id: string;
+  topic_id: string;
+  text: string;
+  owner_name: string;
+  replies: Reply[];
+}
 
 interface PostPageProps {
-  // You might want to define the props needed for this component
+  post_id: string;
+  title: string | null;
+  topic_id: string;
+  comments: CommentData[];
 }
 
 const PostPage: React.FC<PostPageProps> = () => {
-    const { title, post_id } = useParams<{ title: string; post_id: string }>(); // Get title and post_id from URL parameters
-    const { user } = useAuth();
-    const [post, setPost] = useState<any>(null); // Replace 'any' with the type of your post object
-    const [comments, setComments] = useState<any[]>([]);
+  const { title, post_id } = useParams<{ title: string; post_id: string, topic_id: string }>();
+  const [post, setPost] = useState<Post>();
+  const [comments, setComments] = useState<CommentData[]>([]);
 
-    useEffect(() => {
-        const fetchPostAndComments = async () => {
-        try {
-            const response = await fetch(`http://localhost:5000/pr/${title}/${post_id}`);
-            if (response.ok) {
-            const result = await response.json();
-            setPost(result.post);
-            setComments(result.comments);
-            } else {
-            // Handle error
-            console.error('Error fetching post and comments:', response);
-            }
-        } catch (error) {
-            console.error('Error fetching post and comments:', error);
+  useEffect(() => {
+    const fetchPostAndComments = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/pr/${title}/${post_id}`);
+        if (response.ok) {
+          const result = await response.json();
+          setPost(result.post);
+          setComments(result.comments);
+        } else {
+          console.error('Error fetching post and comments:', response);
         }
-        };
+      } catch (error) {
+        console.error('Error fetching post and comments:', error);
+      }
+    };
 
-        fetchPostAndComments();
-    }, [title, post_id]);
+    fetchPostAndComments();
+  }, [title, post_id]);
 
-    if (!post) {
-        return <div>Loading...</div>;
-    }
+  if (!post) {
+    return <div>Loading...</div>;
+  }
 
-    return (
-        <div className="container items-center max-w-7xl mx-auto">
-        <div className="card-body space-y-5">
-            <div>
-            <h2 className="text-4xl font-bold">{post.title}</h2>
-            <p>{post.content}</p>
-            </div>
+  return (
+    <div className="container items-center max-w-7xl mx-auto">
+      <div className="card-body space-y-5">
+        <Post
+          key={post.id}
+          id={post.id}
+          title={post.title}
+          owner_id={post.owner_id}
+          topic_id={post.topic_id}
+          content={post.content}
+          topic_name={post.topic_name}
+          owner_name={post.owner_name}
+          num_likes={post.num_likes}
+        />
+        {console.log("This is topic id" + post.topic_id)}
 
-            {/* Display CommentBox component for commenting */}
-            {/* {user && <CommentBox postId={postId} />} */}
+        <CommentCreator user_id={post.owner_id} post_id={post.id} topic_id={post.topic_id} />
 
-            {/* Display comments */}
-            {comments.map((comment) => (
-                <Comment
-                    key={comment.id}
-                    id={comment.id}
-                    text={comment.content}  // Use the 'content' property as 'text'
-                    user_name={comment.owner_name}  // Use the 'owner_name' property as 'user_name'
-                    likes={comment.num_likes}  // Use the 'num_likes' property as 'likes'
-                    replies={comment.replies}
-                    // You may need to add 'onReply' logic based on your requirements
-                />
-                ))}
-        </div>
-        </div>
-    );
+        {comments.map((comment) => (
+          <Comment
+            key={comment.id}
+            id={comment.id}
+            text={comment.text}
+            user_id={comment.user_id}
+            post_id={comment.post_id}
+            num_likes={comment.num_likes}
+            owner_name={comment.owner_name}
+            replies={comment.replies}
+          />
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default PostPage;
