@@ -421,6 +421,59 @@ def get_post_and_comments(title, post_id):
         return jsonify({"error": f"Database error: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+    
+    # ... 
+
+@app.route("/get_random_posts_with_comments", methods=["GET"])
+def get_random_posts_with_comments():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 4
+
+        posts = (
+            db.session.query(Post)
+            .paginate(page=page, per_page=per_page, error_out=False)
+        )
+
+        formatted_posts = [
+            {
+                "id": post.id,
+                "title": post.title,
+                "content": post.content,
+                "owner_id": post.owner_id,
+                "topic_id": post.topic_id,
+                "num_likes": post.num_likes,
+                "num_comments": post.num_comments,
+                "timestamp": post.timestamp,
+                "owner_name": post.owner_name,
+                "topic_name": post.topic_name,
+                "comments": [
+                    {
+                        "id": comment.id,
+                        "text": comment.text,
+                        "user_id": comment.user_id,
+                        "topic_id": comment.topic_id,
+                        "timestamp": comment.timestamp,
+                        "num_likes": comment.num_likes,
+                    }
+                    for comment in post.comments
+                ],
+            }
+            for post in posts.items
+        ]
+
+        response_data = {
+            "posts": formatted_posts,
+            "has_next": posts.has_next,
+        }
+
+        return jsonify(response_data)
+
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "Internal Server Error"}), 500
+
+
 
 @app.route("/protected", methods=["GET"])
 @jwt_required()
