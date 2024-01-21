@@ -9,7 +9,6 @@ import { motion as m, HTMLMotionProps } from "framer-motion";
 interface Topic {
     id: string;
     title: string;
-  // Add other properties if available
 }
 
 interface TopicPageProps extends HTMLMotionProps<"div"> {}

@@ -56,11 +56,11 @@ const Post: React.FC<PostProps> = ({
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${authToken}`,
           },
-          body: JSON.stringify({ user_id: user?.id, post_id: id }), // Send post_id instead of title
+          body: JSON.stringify({ user_id: user?.id, post_id: id }),
         });
         setHasUpvoted(!hasUpvoted);
         
-        setLikesCount(hasUpvoted ? likesCount - 1 : likesCount + 1); // Update likes count
+        setLikesCount(hasUpvoted ? likesCount - 1 : likesCount + 1);
       } catch (error) {
         console.error("Error upvoting post:", error);
       }
@@ -77,10 +77,10 @@ const Post: React.FC<PostProps> = ({
             'Authorization': `Bearer ${authToken}`,
 
           },
-          body: JSON.stringify({ post_id: id }), // Send post_id instead of title
+          body: JSON.stringify({ post_id: id }),
         });
         setHasDownvoted(!hasDownvoted);
-        setLikesCount(hasDownvoted ? likesCount + 1 : likesCount - 1); // Update likes count
+        setLikesCount(hasDownvoted ? likesCount + 1 : likesCount - 1);
       } catch (error) {
         console.error("Error downvoting post:", error);
       }
@@ -124,7 +124,6 @@ const Post: React.FC<PostProps> = ({
     const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       const target = e.target as HTMLElement;
       
-      // Check if the clicked element is one of the excluded elements (buttons and link)
       if (
         !target.closest(".btn") &&
         !target.closest(".dropdown") &&
@@ -137,7 +136,6 @@ const Post: React.FC<PostProps> = ({
     const checkUserVote = async () => {
       try {
         if (!user) {
-          // If the user is not logged in, return
           return;
         }
   
@@ -154,7 +152,6 @@ const Post: React.FC<PostProps> = ({
         if (response.ok) {
           const data = await response.json();
   
-          // Update the state based on the response
           if (data.vote_status === 'upvoted') {
             setHasUpvoted(true);
             setHasDownvoted(false);

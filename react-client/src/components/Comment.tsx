@@ -131,7 +131,6 @@ const Comment: React.FC<CommentProps> = ({ id, text, user_id, post_id, num_likes
           setHasDownvoted(false);
         }
   
-        // Update the likes count from the API response
         setLikesCount(data.likes_count || 0);
       }
     } catch (error) {
@@ -140,8 +139,7 @@ const Comment: React.FC<CommentProps> = ({ id, text, user_id, post_id, num_likes
   };
   
   useEffect(() => {
-    checkCommentVote(); // Check the comment vote status when the component mounts
-    // ... (existing useEffect dependencies)
+    checkCommentVote();
   }, [id]);
 
   return (

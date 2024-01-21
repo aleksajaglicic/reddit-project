@@ -57,8 +57,8 @@ const Home = () => {
 
     const handleSortingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSortingOption(e.target.value);
-        setPosts([]); // Clear existing posts when changing sorting option
-        setPage(1); // Reset page to 1 when changing sorting option
+        setPosts([]);
+        setPage(1);
     };
     
     // Inside the return statement of Home component

@@ -59,7 +59,6 @@ const Profile: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        // Update the form data with fetched data
         if (fetchedData && fetchedData.user) {
             setFormData(fetchedData.user);
         }
@@ -90,11 +89,9 @@ const Profile: React.FC = () => {
                 });
             } else {
                 const errorData = await response.json();
-                // Handle error if needed
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            // Handle error if needed
         }
     };
 
