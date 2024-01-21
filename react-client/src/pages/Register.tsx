@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { ChangeEvent, useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { motion as m } from "framer-motion";
 import { useToast } from "../components/Toast";
 

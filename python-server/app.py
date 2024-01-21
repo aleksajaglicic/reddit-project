@@ -18,7 +18,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 from uuid import uuid4
-
+from sqlalchemy import desc, func
+import traceback
 # db = SQLAlchemy()
 
 def get_uuid():
@@ -33,8 +34,8 @@ bcrypt = Bcrypt(app)
 db.init_app(app)
 init_db(app)
 
-mail = Mail()
-mail.init_app(app)
+# mail = Mail()
+# mail.init_app(app)
 
 executor = ThreadPoolExecutor()
 
@@ -163,7 +164,7 @@ def login_user_route():
 
 ### PROFILE ###
 
-@app.route("/profile", methods=["GET"])
+@app.route("/profile", methods=["GET", "PUT"])
 @jwt_required()
 def user_profile():
     user_id = get_jwt_identity()
@@ -172,25 +173,36 @@ def user_profile():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    topics = Topic.query.filter_by(user_id=user_id).all()
-    posts = Post.query.filter_by(user_id=user_id).all()
-    comments = Comment.query.filter_by(user_id=user_id).all()
-
-    topics_data = [{"id": topic.id, "title": topic.title, "content": topic.content} for topic in topics]
-    posts_data = [{"id": post.id, "content": post.content} for post in posts]
-    comments_data = [{"id": comment.id, "content": comment.content} for comment in comments]
-
-    return jsonify({
-        "user": {
+    if request.method == "GET":
+        # Return user profile information
+        user_data = {
             "id": user.id,
             "name": user.name,
+            "last_name": user.last_name,
+            "address": user.address,
+            "city": user.city,
+            "phone_number": user.phone_number,
             "email": user.email,
-        },
-        "topics": topics_data,
-        "posts": posts_data,
-        "comments": comments_data,
-    })
+        }
 
+        return jsonify({"user": user_data})
+
+    elif request.method == "PUT":
+        # Update user profile information
+        try:
+            data = request.json
+            user.name = data.get("name", user.name)
+            user.last_name = data.get("last_name", user.last_name)
+            user.address = data.get("address", user.address)
+            user.city = data.get("city", user.city)
+            user.phone_number = data.get("phone_number", user.phone_number)
+
+            db.session.commit()
+
+            return jsonify({"message": "Profile updated successfully"})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": f"Failed to update profile: {str(e)}"}), 500
 ### ROUTES ###
 @jwt_required()
 @app.route("/create_post", methods=["POST"])
@@ -250,10 +262,9 @@ def upvote_post():
             existing_like = UserLikes.query.filter_by(user_id=user_id, post_id=post_id).first()
 
             if existing_like:
-                # User already liked the post, so remove the like
                 db.session.delete(existing_like)
             else:
-                # User has not liked the post, so add the like
+                # Add a new upvote with like_status=True
                 new_like = UserLikes(user_id=user_id, post_id=post_id, like_status=True)
                 db.session.add(new_like)
 
@@ -283,7 +294,6 @@ def downvote_post():
             existing_like = UserLikes.query.filter_by(user_id=user_id, post_id=post_id).first()
 
             if existing_like:
-                # User has already liked the post, so remove the like
                 db.session.delete(existing_like)
             else:
                 # User has not liked the post, so add the like with like_status=False for downvote
@@ -295,6 +305,68 @@ def downvote_post():
             return jsonify({'message': 'Downvote successful'}), 200
 
         return jsonify({'message': 'Post not found'}), 404
+
+    except Exception as e:
+        print(e)
+        return jsonify({'error': 'Internal Server Error'}), 500
+
+@app.route("/check_vote", methods=["POST"])
+@jwt_required()
+def check_vote():
+    try:
+        data = request.get_json()
+        post_id = data.get('post_id')
+        user_id = get_jwt_identity()
+
+        # Check if the post with the given ID exists
+        existing_post = Post.query.get(post_id)
+
+        if existing_post:
+            # Check if the user has already liked or disliked the post
+            existing_like = UserLikes.query.filter_by(user_id=user_id, post_id=post_id).first()
+
+            if existing_like:
+                # User has liked or disliked the post
+                if existing_like.like_status:
+                    return jsonify({'vote_status': 'upvoted'}), 200
+                else:
+                    return jsonify({'vote_status': 'downvoted'}), 200
+            else:
+                # User has not liked or disliked the post
+                return jsonify({'vote_status': 'none'}), 200
+
+        return jsonify({'message': 'Post not found'}), 404
+
+    except Exception as e:
+        print(e)
+        return jsonify({'error': 'Internal Server Error'}), 500
+
+@app.route("/check_comment_vote", methods=["POST"])
+@jwt_required()
+def check_comment_vote():
+    try:
+        data = request.get_json()
+        comment_id = data.get('comment_id')
+        user_id = get_jwt_identity()
+
+        # Check if the comment with the given ID exists
+        existing_comment = Comment.query.get(comment_id)
+
+        if existing_comment:
+            # Check if the user has already liked or disliked the comment
+            existing_like = UserLikes.query.filter_by(user_id=user_id, comment_id=comment_id).first()
+
+            if existing_like:
+                # User has liked or disliked the comment
+                if existing_like.like_status:
+                    return jsonify({'vote_status': 'upvoted'}), 200
+                else:
+                    return jsonify({'vote_status': 'downvoted'}), 200
+            else:
+                # User has not liked or disliked the comment
+                return jsonify({'vote_status': 'none'}), 200
+
+        return jsonify({'message': 'Comment not found'}), 404
 
     except Exception as e:
         print(e)
@@ -322,11 +394,26 @@ def get_random_posts():
     try:
         page = request.args.get('page', 1, type=int)
         per_page = 4
+        sort_option = request.args.get('sort', 'latest')  # Default to 'latest' if not provided
+        print("THIS IS SORT OPTIOM:?////// ", sort_option)
+        query = db.session.query(Post)
 
-        posts = (
-            db.session.query(Post)
-            .paginate(page=page, per_page=per_page, error_out=False)
-        )
+        if sort_option == 'comments':
+            query = query.outerjoin(Comment).group_by(Post.id).order_by(func.count(Comment.id).desc(), Post.timestamp)
+        elif sort_option == 'upvotes':
+            subquery = (
+                db.session.query(UserLikes.post_id, func.count(UserLikes.id).label('num_likes'))
+                .group_by(UserLikes.post_id)
+                .subquery()
+            )
+            query = (
+                query.outerjoin(subquery, Post.id == subquery.c.post_id)
+                .order_by(func.coalesce(subquery.c.num_likes, 0).desc(), Post.timestamp)
+            )
+        else:
+            query = query.order_by(Post.timestamp.desc())
+
+        posts = query.paginate(page=page, per_page=per_page, error_out=False)
 
         formatted_posts = [
             {
@@ -352,7 +439,7 @@ def get_random_posts():
         return jsonify(response_data)
 
     except Exception as e:
-        print(e)
+        return jsonify({"error": traceback.format_exc()}), 500
         return jsonify({"error": "Internal Server Error"}), 500
 
 @app.route("/pr/<string:title>", methods=["GET"])
@@ -425,7 +512,7 @@ def get_post_and_comments(title, post_id):
             .order_by(Comment.timestamp.desc())
             .all()
         )
-
+        print("//////////////// COmment number:", post.num_comments)
         formatted_comments = [
             {
                 "id": comment.id,
@@ -434,7 +521,6 @@ def get_post_and_comments(title, post_id):
                 "post_id": comment.post_id,
                 "timestamp": comment.timestamp,
                 "owner_name": comment.owner_name,
-                # Add other fields as needed
             }
             for comment in comments
         ]
@@ -626,17 +712,64 @@ def create_comment():
 @app.route("/upvote_comment", methods=["POST"])
 @jwt_required()
 def upvote_comment_route():
-    comment_id = request.json["comment_id"]
+    try:
+        data = request.get_json()
+        post_id = data.get('post_id')
+        comment_id = data.get('comment_id')  # Add support for comment_id
+        user_id = get_jwt_identity()
 
-    existing_comment = Comment.query.filter_by(id = comment_id).first()
+        # Check if it's a post or comment
+        if post_id:
+            existing_item = Post.query.get(post_id)
+        elif comment_id:
+            existing_item = Comment.query.get(comment_id)
+        else:
+            return jsonify({'message': 'Invalid request'}), 400
 
-    return upvote_comment(comment_id)
+        if existing_item:
+            existing_like = UserLikes.query.filter_by(user_id=user_id, post_id=post_id, comment_id=comment_id).first()
+
+            if existing_like:
+                db.session.delete(existing_like)
+            else:
+                new_like = UserLikes(user_id=user_id, post_id=post_id, comment_id=comment_id, like_status=True)
+                db.session.add(new_like)
+
+            db.session.commit()
+
+            return jsonify({'message': 'Upvote successful'}), 200
+
+        return jsonify({'message': 'Item not found'}), 404
+
+    except Exception as e:
+        print(e)
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 @app.route("/downvote_comment", methods=["POST"])
 @jwt_required()
 def downvote_comment_route():
-    comment_id = request.json["comment_id"]
-    return downvote_comment(comment_id)
+    try:
+        data = request.get_json()
+        comment_id = data.get('comment_id')
+        user_id = get_jwt_identity()
+
+        existing_like = UserLikes.query.filter_by(user_id=user_id, comment_id=comment_id).first()
+
+        if existing_like:
+            db.session.delete(existing_like)
+        else:
+            new_like = UserLikes(user_id=user_id, comment_id=comment_id, like_status=False)
+            db.session.add(new_like)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Downvote successful'}), 200
+
+    except Exception as e:
+        print(e)
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 @app.route("/delete_topic", methods=["POST"])
 @jwt_required()
@@ -686,14 +819,30 @@ def delete_post_route():
     else:
         return jsonify({"message": "Error during deletion of post"}), 400
 
+def search_topics(search_query):
+    topics = (
+        Topic.query
+        .filter(Topic.title.ilike(f"%{search_query}%"))
+        .all()
+    )
+
+    topics_data = [{"id": topic.id, "title": topic.title} for topic in topics]
+    return topics_data
 
 @app.route("/sort_search_topics", methods=["POST"])
-@jwt_required()
 def sort_search_topics_route():
-    sort_type = request.json.get("sort_type", "default")
-    search_query = request.json.get("search_query", "")
-    topics_data = sort_search_topics(sort_type, search_query)
-    return jsonify({"topics": topics_data})
+    try:
+        sort_type = request.json.get("sort_type", "default")
+        search_query = request.json.get("search_query", "")
+
+        if sort_type == "default":
+            topics_data = search_topics(search_query)
+            return jsonify({"topics": topics_data})
+        else:
+            return jsonify({"error": "Invalid sort type"}), 400
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/test", methods=["GET"])
 def test():

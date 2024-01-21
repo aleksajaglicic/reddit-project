@@ -22,9 +22,10 @@ const Home = () => {
     const [page, setPage] = useState(1);
     const [hasNext, setHasNext] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [sortingOption, setSortingOption] = useState<string>("latest");
 
-    const fetchPosts = (pageNumber: number) => {
-        fetch(`http://localhost:5000/?page=${pageNumber}`)
+    const fetchPosts = (pageNumber: number, sortOption: string) => {
+        fetch(`http://localhost:5000/?page=${pageNumber}&sort=${sortOption}`)
             .then((response) => response.json())
             .then((data) => {
                 setPosts((prevPosts) => {
@@ -43,16 +44,33 @@ const Home = () => {
     };
 
     useEffect(() => {
-        fetchPosts(page);
-    }, [page]);
+        fetchPosts(page, sortingOption);
+    }, [page, sortingOption]);
 
     const loadMorePosts = () => {
         if (!loading && hasNext) {
         setLoading(true);
-        fetchPosts(page + 1);
+        fetchPosts(page + 1, sortingOption);
         setPage(page + 1);
         }
     };
+
+    const handleSortingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSortingOption(e.target.value);
+        setPosts([]); // Clear existing posts when changing sorting option
+        setPage(1); // Reset page to 1 when changing sorting option
+    };
+    
+    // Inside the return statement of Home component
+    <div className="mb-4">
+        <label className="mr-2">Sort by:</label>
+        <select value={sortingOption} onChange={handleSortingChange}>
+            <option value="latest">Latest</option>
+            <option value="comments">Most Comments</option>
+            <option value="upvotes">Most Upvotes</option>
+        </select>
+    </div>
+    
 
     return (
         <m.div
@@ -67,7 +85,17 @@ const Home = () => {
             hasMore={hasNext && !loading}
             loader={<h4>Loading...</h4>}
         >
-            <PostContainer posts={posts} title={null} topic_id={""} />
+            <div className="flex">
+                <div className="absolute left-96 bottom-72">
+                    <label className="mr-2">Sort by:</label>
+                    <select className="select" value={sortingOption} onChange={handleSortingChange}>
+                        <option value="latest">Latest</option>
+                        <option value="comments">Most Comments</option>
+                        <option value="upvotes">Most Upvotes</option>
+                    </select>
+                </div>
+                <PostContainer posts={posts} title={null} topic_id={""} />
+            </div>
         </InfiniteScroll>
         </m.div>
     );

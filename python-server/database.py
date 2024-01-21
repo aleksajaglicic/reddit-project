@@ -58,7 +58,9 @@ class Post(db.Model):
 
     @property
     def num_likes(self):
-        return len(self.likes_users)
+        num_likes = UserLikes.query.filter_by(post_id=self.id, like_status=True).count()
+        num_dislikes = UserLikes.query.filter_by(post_id=self.id, like_status=False).count()
+        return num_likes - num_dislikes
     
     @property
     def num_comments(self):
@@ -80,7 +82,9 @@ class Comment(db.Model):
 
     @property
     def num_likes(self):
-        return len(self.likes_users)
+        num_likes = UserLikes.query.filter_by(comment_id=self.id, like_status=True).count()
+        num_dislikes = UserLikes.query.filter_by(comment_id=self.id, like_status=False).count()
+        return num_likes - num_dislikes
     
     @property
     def owner_name(self):
@@ -97,7 +101,6 @@ class UserLikes(db.Model):
     like_status = db.Column(db.Boolean)
     user = db.relationship('User', back_populates='likes')
     post = db.relationship('Post', back_populates='likes_users')
-
 
 class UserSubscriptions(db.Model):
     __tablename__ = "userSubscriptions"

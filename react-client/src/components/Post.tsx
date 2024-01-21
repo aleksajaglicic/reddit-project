@@ -31,7 +31,7 @@ const Post: React.FC<PostProps> = ({
   topic_id,
   content,
   num_likes,
-  num_comments = 0,
+  num_comments,
   topic_name,
 }) => {
   const { user } = useAuth()
@@ -40,11 +40,12 @@ const Post: React.FC<PostProps> = ({
   const [hasDownvoted, setHasDownvoted] = useState(false);
   const [isUsersPost, setIsUsersPost] = useState(false);
   const [likesCount, setLikesCount] = useState(num_likes ?? 0);
+  const [truncated, setTruncated] = useState(true);
   const navigate = useNavigate();
 
-  const toggleExpansion = () => {
-    setExpanded(!expanded);
-  };
+    const toggleExpansion = () => {
+      setExpanded(!expanded);
+    };
 
     const handleUpvote = async () => {
       try {
@@ -57,7 +58,6 @@ const Post: React.FC<PostProps> = ({
           },
           body: JSON.stringify({ user_id: user?.id, post_id: id }), // Send post_id instead of title
         });
-
         setHasUpvoted(!hasUpvoted);
         
         setLikesCount(hasUpvoted ? likesCount - 1 : likesCount + 1); // Update likes count
@@ -112,17 +112,74 @@ const Post: React.FC<PostProps> = ({
           console.error('Error during deletion:', error);
       }
     } 
-  
+
     useEffect(() => {
-      if (user?.id === String(owner_id)) {
-        setIsUsersPost(true);
-      } else {
-        setIsUsersPost(false);
+      const contentElement = document.getElementById(`content-${id}`);
+  
+      if (contentElement) {
+        setTruncated(contentElement.scrollHeight > contentElement.clientHeight);
       }
+    }, [content, truncated, id]);
+
+    const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      const target = e.target as HTMLElement;
+      
+      // Check if the clicked element is one of the excluded elements (buttons and link)
+      if (
+        !target.closest(".btn") &&
+        !target.closest(".dropdown") &&
+        !target.closest(".text-sm.underline")
+      ) {
+        navigate(`/pr/${topic_name}/${id}`);
+      }
+    };
+  
+    const checkUserVote = async () => {
+      try {
+        if (!user) {
+          // If the user is not logged in, return
+          return;
+        }
+  
+        const authToken = localStorage.getItem('access_token');
+        const response = await fetch(`http://localhost:5000/check_vote`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ user_id: user?.id, post_id: id }),
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
+  
+          // Update the state based on the response
+          if (data.vote_status === 'upvoted') {
+            setHasUpvoted(true);
+            setHasDownvoted(false);
+          } else if (data.vote_status === 'downvoted') {
+            setHasUpvoted(false);
+            setHasDownvoted(true);
+          } else {
+            setHasUpvoted(false);
+            setHasDownvoted(false);
+          }
+        } else {
+          console.error('Error checking user vote:', response.status);
+        }
+      } catch (error) {
+        console.error('Error checking user vote:', error);
+      }
+    };
+
+    useEffect(() => {
+      checkUserVote();
     }, [user, id]);
 
   return (
     // <Link to={`/pr/${topic_name}/${id}`}>
+    <div className="post-background" onClick={handleBackgroundClick}>
       <motion.div
         className="card w-full bg-base-100 rounded-2xl overflow-hidden"
         initial={{ height: "fit-content", backgroundSize: "70% 100%" }}
@@ -162,33 +219,38 @@ const Post: React.FC<PostProps> = ({
             {title}
           </h2>
           <motion.p
+            id={`content-${id}`}
             className={`mt-2 mb-4 ${
-              content.length > 400 ? (expanded ? "" : "line-clamp-3 cursor-pointer") : ""
+              truncated ? "cursor-pointer" : ""
             }`}
-            onClick={content.length > 400 ? toggleExpansion : undefined}
+            onClick={toggleExpansion}
           >
             {content}
           </motion.p>
           <div className="flex items-center space-x-4 mt-2">
-          <div className="bg-info text-base-300 rounded-2xl font-bold text-sm flex items-center justify-center">
-            <button
-              className={`btn btn-ghost mr-2 rounded-2xl w-4 h-4 ${
-                hasUpvoted ? "fill-red-700" : "fill-base-300"
-              }`}
-              onClick={handleUpvote}
-            >
-              <ArrowUpIcon className={`stroke-2 w-4 h-4 ${hasUpvoted ? "fill-red-700" : "fill-base-300"}`} />
-            </button>
-            {likesCount}
-            <button
-              className={`btn btn-ghost ml-2 rounded-2xl w-4 h-4 ${
-                hasDownvoted ? "text-error" : ""
-              }`}
-              onClick={handleDownvote}
-            >
-              <ArrowDownIcon className={`stroke-2 w-4 h-4 ${hasDownvoted ? "fill-red-700" : "fill-base-300"}`} />
-            </button>
-          </div>
+            {user ? (
+              <div className="bg-info text-base-300 rounded-2xl font-bold text-sm flex items-center justify-center">
+                <button
+                  className={`btn btn-ghost mr-2 rounded-2xl w-4 h-4 ${
+                    hasUpvoted ? "fill-red-700" : "fill-base-300"
+                  }`}
+                  onClick={handleUpvote}
+                >
+                  <ArrowUpIcon className={`stroke-2 w-4 h-4 ${hasUpvoted ? "fill-red-700" : "fill-base-300"}`} />
+                </button>
+                {likesCount}
+                <button
+                  className={`btn btn-ghost ml-2 rounded-2xl w-4 h-4 ${
+                    hasDownvoted ? "text-error" : ""
+                  }`}
+                  onClick={handleDownvote}
+                >
+                  <ArrowDownIcon className={`stroke-2 w-4 h-4 ${hasDownvoted ? "fill-red-700" : "fill-base-300"}`} />
+                </button>
+              </div>
+            ) : (
+              <button className="btn btn-info" aria-readonly>Number of likes: {num_likes}</button>
+            )}
             <button className="btn btn-secondary rounded-2xl">
               <ChatBubbleLeftRightIcon className="w-5 h-5" />
               <p className="hidden md:flex">{num_comments} Comments</p>
@@ -200,7 +262,7 @@ const Post: React.FC<PostProps> = ({
           </div>
         </div>
       </motion.div>
-    // </Link>
+    </div>
   );
 };
 

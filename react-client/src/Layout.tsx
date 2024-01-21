@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import Navbar from './components/Navbar';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import Search from './pages/Search';
 import Topic from './pages/Topic';
 import { ToastProvider } from './components/Toast';
 import PostCreator from './components/PostCreator';
@@ -45,9 +46,8 @@ const Layout = () => {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/notFound" element={<NotFound />} />
                 <Route path="/pr/:title" element={<Topic />} />
-                <Route path="/pr/:title/:post_id" element={<PostPage />} />
-                <Route path="/post_creator" element={<PostCreator owner_id='' topic_id='' />} />
-                <Route path="/comment" element={<Comment/>} />
+                {/* <Route path="/search" element={<Search searchResults={searchResults} />} /> */}
+                <Route path="/pr/:title/:post_id" element={<PostPage post_id={''} title={null} topic_id={''} comments={[]} />} />
                 </Routes>
             </div>
             </ScrollToTop>

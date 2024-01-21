@@ -79,6 +79,10 @@ body {
     padding: 0;
 }
 
+.post-background {
+    cursor: pointer;
+}
+
 .background_root__yzs99 {
     background:linear-gradient(90deg,#161616 17px,transparent 1%) 50%,linear-gradient(#161616 17px,transparent 1%) 50%,#3d3d3d;
     background-size:18px 18px

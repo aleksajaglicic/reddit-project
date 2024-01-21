@@ -1,9 +1,8 @@
 // eslint-disable-next-line no-unused-vars
-import React from "react"
+import React, { useState } from "react"
 import { useAuth } from "../contexts/AuthContext"
 import { MagnifyingGlassIcon, Bars2Icon } from "@heroicons/react/20/solid"
 import { useNavigate } from "react-router-dom"
-
 interface NavbarProps {
     style?: React.CSSProperties & {
         "--navbar-bg"?: string;
@@ -11,8 +10,10 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ style }) => {
+    const [searchResults, setSearchResults] = useState([]);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState("");
     console.log("User in Navbar:", user);
 
     const handleLoginClick = () => {
@@ -31,6 +32,31 @@ const Navbar: React.FC<NavbarProps> = ({ style }) => {
         logout()
         navigate("/");
     }
+
+    const handleSearch = () => {
+        console.log("Search query:", searchQuery);
+
+        fetch(`http://localhost:5000/sort_search_topics`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sort_type: "default", search_query: searchQuery }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Search results:", data.topics);
+            setSearchResults(data.topics); // Set search results in state
+            navigate('/search', { state: { searchResults: data.topics } }); // Navigate to search page
+        })
+        .catch(error => console.error("Error during search:", error));
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            handleSearch();
+        }
+    };
 
     return (
         <div 
@@ -53,10 +79,13 @@ const Navbar: React.FC<NavbarProps> = ({ style }) => {
                 </label>
             </div>
             <div className="relative w-full">
-                <input
-                    type="text"
-                    placeholder="Search PReddit"
-                    className="input input-bordered rounded-2xl text-center w-full"
+            <input
+                type="text"
+                placeholder="Search PReddit"
+                className="input input-bordered rounded-2xl text-center w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
                 />
                 <MagnifyingGlassIcon className="absolute space-x-2 w-5 h-5 text-gray-400 ml-2" />
             </div>
@@ -78,12 +107,9 @@ const Navbar: React.FC<NavbarProps> = ({ style }) => {
                             bg-base-300 
                             rounded-box w-52">
                             <li>
-                                <a className="justify-between">
-                                    {user.email}
+                                <a className="justify-between">My Profile
                                 </a>
                             </li>
-                            <li><a>My Threads</a></li>
-                            <li><a>My Posts</a></li>
                             <li><a className="text-red-500" onClick={handleLogoutClick}>Logout</a></li>
                         </ul>
                     </div>

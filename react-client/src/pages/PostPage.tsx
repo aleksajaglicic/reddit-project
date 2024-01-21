@@ -1,24 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import Comment from '../components/Comment';
 import Post from "../components/Post";
 import CommentCreator from '../components/CommentCreator';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Reply {
   id: string;
   owner_id: string;
   topic_id: string;
   text: string;
+  num_likes: string;
   owner_name: string;
 }
 
 interface CommentData {
   id: string;
-  owner_id: string;
   topic_id: string;
   text: string;
   owner_name: string;
+  post_id: string;
+  user_id: string;
+  num_likes: number;
   replies: Reply[];
 }
 
@@ -30,6 +33,7 @@ interface PostPageProps {
 }
 
 const PostPage: React.FC<PostPageProps> = () => {
+  const { user } = useAuth();
   const { title, post_id } = useParams<{ title: string; post_id: string, topic_id: string }>();
   const [post, setPost] = useState<Post>();
   const [comments, setComments] = useState<CommentData[]>([]);
@@ -58,8 +62,8 @@ const PostPage: React.FC<PostPageProps> = () => {
   }
 
   return (
-    <div className="container items-center max-w-7xl mx-auto">
-      <div className="card-body space-y-5">
+    <div className="container mt-8 items-center max-w-7xl mx-auto">
+      <>
         <Post
           key={post.id}
           id={post.id}
@@ -72,22 +76,21 @@ const PostPage: React.FC<PostPageProps> = () => {
           num_likes={post.num_likes}
         />
         {console.log("This is topic id" + post.topic_id)}
-
-        <CommentCreator user_id={post.owner_id} post_id={post.id} topic_id={post.topic_id} />
-
-        {comments.map((comment) => (
-          <Comment
-            key={comment.id}
-            id={comment.id}
-            text={comment.text}
-            user_id={comment.user_id}
-            post_id={comment.post_id}
-            num_likes={comment.num_likes}
-            owner_name={comment.owner_name}
-            replies={comment.replies}
-          />
-        ))}
-      </div>
+        {user && <CommentCreator user_id={post.owner_id} post_id={post.id} topic_id={post.topic_id} />}
+        <div className="card-body space-y-5">
+          {comments.map((comment) => (
+            <Comment
+              key={comment.id}
+              id={comment.id}
+              text={comment.text}
+              user_id={comment.user_id}
+              post_id={comment.post_id}
+              num_likes={comment.num_likes}
+              owner_name={comment.owner_name}
+            />
+          ))}
+        </div>
+      </>
     </div>
   );
 };
