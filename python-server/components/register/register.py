@@ -18,7 +18,10 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 from uuid import uuid4
+from app import app
 
+register = Blueprint('register', __name__)
+bcrypt = Bcrypt(app)
 
 def register_user_in_thread(name, last_name, address, city, phone_number, email, password):
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')

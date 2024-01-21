@@ -20,6 +20,8 @@ from sqlalchemy.orm import joinedload
 from uuid import uuid4
 from app import app
 
+login = Blueprint('login', __name__)
+
 def login_user(email, password):
     user = User.query.filter_by(email=email).first()
 

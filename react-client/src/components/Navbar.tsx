@@ -46,8 +46,8 @@ const Navbar: React.FC<NavbarProps> = ({ style }) => {
         .then(response => response.json())
         .then(data => {
             console.log("Search results:", data.topics);
-            setSearchResults(data.topics); // Set search results in state
-            navigate('/search', { state: { searchResults: data.topics } }); // Navigate to search page
+            setSearchResults(data.topics);
+            navigate('/search', { state: { searchResults: data.topics } });
         })
         .catch(error => console.error("Error during search:", error));
     };

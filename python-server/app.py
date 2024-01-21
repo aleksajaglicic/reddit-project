@@ -20,6 +20,7 @@ from sqlalchemy.orm import joinedload
 from uuid import uuid4
 from sqlalchemy import desc, func
 import traceback
+
 # db = SQLAlchemy()
 
 def get_uuid():
@@ -34,8 +35,8 @@ bcrypt = Bcrypt(app)
 db.init_app(app)
 init_db(app)
 
-# mail = Mail()
-# mail.init_app(app)
+mail = Mail()
+mail.init_app(app)
 
 executor = ThreadPoolExecutor()
 
@@ -47,7 +48,7 @@ with app.app_context():
 
 def send_mail(subject, recipient, body):
     try:
-        with app.app_context():  # Create application context
+        with app.app_context():
             msg = Message(subject, recipients=[recipient], body=body)
             mail.send(msg)
             print("//////////////////////Email sent successfully!////////////////////////////////")
@@ -63,7 +64,7 @@ def send_confirmation_email_async(email):
     body = f"Thank you for registering on our platform! Your email {email} has been confirmed."
     send_mail_async(subject, email, body)
 
-### USER REGISTRATION ###
+# ### USER REGISTRATION ###
 
 def register_user_in_thread(name, last_name, address, city, phone_number, email, password):
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -174,7 +175,6 @@ def user_profile():
         return jsonify({"error": "User not found"}), 404
 
     if request.method == "GET":
-        # Return user profile information
         user_data = {
             "id": user.id,
             "name": user.name,
@@ -188,7 +188,6 @@ def user_profile():
         return jsonify({"user": user_data})
 
     elif request.method == "PUT":
-        # Update user profile information
         try:
             data = request.json
             user.name = data.get("name", user.name)
@@ -203,6 +202,7 @@ def user_profile():
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": f"Failed to update profile: {str(e)}"}), 500
+
 ### ROUTES ###
 @jwt_required()
 @app.route("/create_post", methods=["POST"])
@@ -252,19 +252,16 @@ def upvote_post():
     try:
         data = request.get_json()
         post_id = data.get('post_id')
-        user_id = get_jwt_identity()  # Replace with the actual way you get the user ID from the request
+        user_id = get_jwt_identity()
         print(user_id)
-        # Check if the post with the given ID exists
         existing_post = Post.query.get(post_id)
         # print("/////////////////USER LIKES FOR POST:", existing_post.num_likes)
         if existing_post:
-            # Check if the user has already liked the post
             existing_like = UserLikes.query.filter_by(user_id=user_id, post_id=post_id).first()
 
             if existing_like:
                 db.session.delete(existing_like)
             else:
-                # Add a new upvote with like_status=True
                 new_like = UserLikes(user_id=user_id, post_id=post_id, like_status=True)
                 db.session.add(new_like)
 
@@ -318,15 +315,12 @@ def check_vote():
         post_id = data.get('post_id')
         user_id = get_jwt_identity()
 
-        # Check if the post with the given ID exists
         existing_post = Post.query.get(post_id)
 
         if existing_post:
-            # Check if the user has already liked or disliked the post
             existing_like = UserLikes.query.filter_by(user_id=user_id, post_id=post_id).first()
 
             if existing_like:
-                # User has liked or disliked the post
                 if existing_like.like_status:
                     return jsonify({'vote_status': 'upvoted'}), 200
                 else:
@@ -349,21 +343,17 @@ def check_comment_vote():
         comment_id = data.get('comment_id')
         user_id = get_jwt_identity()
 
-        # Check if the comment with the given ID exists
         existing_comment = Comment.query.get(comment_id)
 
         if existing_comment:
-            # Check if the user has already liked or disliked the comment
             existing_like = UserLikes.query.filter_by(user_id=user_id, comment_id=comment_id).first()
 
             if existing_like:
-                # User has liked or disliked the comment
                 if existing_like.like_status:
                     return jsonify({'vote_status': 'upvoted'}), 200
                 else:
                     return jsonify({'vote_status': 'downvoted'}), 200
             else:
-                # User has not liked or disliked the comment
                 return jsonify({'vote_status': 'none'}), 200
 
         return jsonify({'message': 'Comment not found'}), 404
@@ -394,7 +384,7 @@ def get_random_posts():
     try:
         page = request.args.get('page', 1, type=int)
         per_page = 4
-        sort_option = request.args.get('sort', 'latest')  # Default to 'latest' if not provided
+        sort_option = request.args.get('sort', 'latest')
         print("THIS IS SORT OPTIOM:?////// ", sort_option)
         query = db.session.query(Post)
 
@@ -672,7 +662,7 @@ def is_subscribed():
 def create_comment():
     try:
         user_id = get_jwt_identity()
-        text = request.json.get("text")  # Use .get() to handle missing keys
+        text = request.json.get("text")
         post_id = request.json.get("post_id")
         topic_id = request.json.get("topic_id")
 
@@ -688,8 +678,6 @@ def create_comment():
 
         db.session.add(comment)
         db.session.commit()
-
-        # Optionally, you can send a notification to the user or perform other actions
 
         return jsonify({
             "message": "Comment created successfully.",
@@ -715,10 +703,9 @@ def upvote_comment_route():
     try:
         data = request.get_json()
         post_id = data.get('post_id')
-        comment_id = data.get('comment_id')  # Add support for comment_id
+        comment_id = data.get('comment_id')
         user_id = get_jwt_identity()
 
-        # Check if it's a post or comment
         if post_id:
             existing_item = Post.query.get(post_id)
         elif comment_id:

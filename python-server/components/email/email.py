@@ -18,8 +18,10 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 from uuid import uuid4
+from app import app
 
 mail = Mail()
+executor = ThreadPoolExecutor()
 
 def init_email(app):
     mail.init_app(app)

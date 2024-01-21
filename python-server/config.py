@@ -13,5 +13,5 @@ class ApplicationConfig:
     MAIL_USE_TLS = True
     MAIL_USE_SSL = False
     MAIL_USERNAME = 'akisamja10@gmail.com'
-    MAIL_PASSWORD = 'lqnr dabs heff fqfb'  # Replace with the generated App Password
+    MAIL_PASSWORD = 'lqnr dabs heff fqfb'
     MAIL_DEFAULT_SENDER = 'akisamja10@gmail.com'

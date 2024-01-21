@@ -4,7 +4,6 @@ WORKDIR /app
 
 COPY config.py ./
 COPY models/ ./models
-COPY components/ ./components
 COPY requirements.txt ./
 
 RUN pip install -r requirements.txt
