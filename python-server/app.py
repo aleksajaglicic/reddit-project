@@ -48,7 +48,7 @@ with app.app_context():
 
 def send_mail(subject, recipient, body):
     try:
-        with app.app_context():
+        with app.app_context():  # Create application context
             msg = Message(subject, recipients=[recipient], body=body)
             mail.send(msg)
             print("//////////////////////Email sent successfully!////////////////////////////////")
@@ -64,15 +64,19 @@ def send_confirmation_email_async(email):
     body = f"Thank you for registering on our platform! Your email {email} has been confirmed."
     send_mail_async(subject, email, body)
 
-# ### USER REGISTRATION ###
+### USER REGISTRATION ###
 
 def register_user_in_thread(name, last_name, address, city, phone_number, email, password):
-    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(name=name, last_name=last_name, address=address, city=city, phone_number=phone_number, email=email, password=hashed_password)
-    db.session.add(new_user)
-    db.session.commit()
+    try:
+        with current_app.app_context():
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            new_user = User(name=name, last_name=last_name, address=address, city=city, phone_number=phone_number, email=email, password=hashed_password)
+            db.session.add(new_user)
+            db.session.commit()
 
-    send_confirmation_email(email)
+            send_confirmation_email_async(email)
+    except Exception as e:
+        print(f"Error registering user in thread: {e}")
 
 def send_topic_creation_notification(email, topic_title):
     try:
@@ -202,7 +206,6 @@ def user_profile():
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": f"Failed to update profile: {str(e)}"}), 500
-
 ### ROUTES ###
 @jwt_required()
 @app.route("/create_post", methods=["POST"])
@@ -252,7 +255,7 @@ def upvote_post():
     try:
         data = request.get_json()
         post_id = data.get('post_id')
-        user_id = get_jwt_identity()
+        user_id = get_jwt_identity() 
         print(user_id)
         existing_post = Post.query.get(post_id)
         # print("/////////////////USER LIKES FOR POST:", existing_post.num_likes)
@@ -283,17 +286,14 @@ def downvote_post():
         post_id = data.get('post_id')
         user_id = get_jwt_identity()
 
-        # Check if the post with the given ID exists
         existing_post = Post.query.get(post_id)
 
         if existing_post:
-            # Check if the user has already liked the post
             existing_like = UserLikes.query.filter_by(user_id=user_id, post_id=post_id).first()
 
             if existing_like:
                 db.session.delete(existing_like)
             else:
-                # User has not liked the post, so add the like with like_status=False for downvote
                 new_like = UserLikes(user_id=user_id, post_id=post_id, like_status=False)
                 db.session.add(new_like)
 
@@ -326,7 +326,6 @@ def check_vote():
                 else:
                     return jsonify({'vote_status': 'downvoted'}), 200
             else:
-                # User has not liked or disliked the post
                 return jsonify({'vote_status': 'none'}), 200
 
         return jsonify({'message': 'Post not found'}), 404
@@ -662,7 +661,7 @@ def is_subscribed():
 def create_comment():
     try:
         user_id = get_jwt_identity()
-        text = request.json.get("text")
+        text = request.json.get("text") 
         post_id = request.json.get("post_id")
         topic_id = request.json.get("topic_id")
 
@@ -678,6 +677,7 @@ def create_comment():
 
         db.session.add(comment)
         db.session.commit()
+
 
         return jsonify({
             "message": "Comment created successfully.",

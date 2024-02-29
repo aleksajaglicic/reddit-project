@@ -46,7 +46,7 @@ const Layout = () => {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/notFound" element={<NotFound />} />
                 <Route path="/pr/:title" element={<Topic />} />
-                {/* <Route path="/search" element={<Search searchResults={searchResults} />} /> */}
+                <Route path="/search" element={<Search />} />
                 <Route path="/pr/:title/:post_id" element={<PostPage post_id={''} title={null} topic_id={''} comments={[]} />} />
                 </Routes>
             </div>
