@@ -59,3 +59,19 @@ cd reddit-project
 ```bash
 docker-compose up --build
 ```
+3. Okruženje za razvoj
+
+Ako želite da radite u razvojnom okruženju, možete koristiti sledeće komande da pokrenete aplikaciju bez Docker-a:
+Pokrenite backend (Flask)
+```bash
+cd backend
+pip install -r requirements.txt
+flask run
+```
+Pokrenite frontend (React + TypeScript)
+```bash
+cd frontend
+npm install
+npm start
+docker-compose up --build
+```
