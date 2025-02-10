@@ -1,59 +1,61 @@
-## reddit-project
+# reddit-project
 
-Implementirati sistem za pravljenje različitih tema i komentara.
-Implementacija treba da sadrzi 3 komponente:
-1. Korisnicki interfejs (UI)
-2. Servis za obradu zahteva I podataka (Engine)
-3. Bazu podataka (DB)
+Reddit Clone projekat - web aplikacija za upravljanje temama i komentarima nalik Reddit-u. Aplikacija koristi Flask (backend), React sa TypeScript-om (frontend) i PostgreSQL (baza podataka). 
 
-**Korisnicki interfejs** je Flask web aplikacija koja treba da opsluzi korisnika u interakciji sa
-platnim prometom.
+## Funkcionalnosti
 
-Akcije koje treba podrzati na korisnickom interfejsu su:
-- Registracija novog korisnika
-- Logovanje postojeceg korisnika
-- Izmena korisnickog profila
-- Pravljenje teme na koju se drugi korisnici mogu pretplatiti
-- Pravljenje novog komentara od strane bilo kojeg korisnika
-- Slanje obaveštenja svim pretplaćenim korisnicima
-- Upvote \ downvote komentara
-- Omogućiti upvote \ downvote iz samog mejla
-- Omogućiti brisanje neke teme od strane vlasnika
-- Omogućti pretragu tema i sortiranje po tome koje imaju najviše komentara ili najviše upvotes ili downvotes. Samo ulogovani korisnici mogu da rade upvote - downvote ili da komentarišu.
-- Omogućiti vlasniku teme da u bilo kom momentu može da napravi temu zatvorenom za komentarisanje
-    
-Korisnik se registruje unoseci:
-- Ime
-- Prezime
-- Adresa
-- Grad
-- Drzava
-- Broj telefona
-- Email
-- Lozinka
-    
-Korisnike se loguje putem:
-- Email
-- Lozinka
-    
-Novi korisnik nakon krearanog naloga dolazi na stranicu sa temama, gde postoji inicijalno
-prazan spisak njegovih tema sa mogućnošću pravljenja nove teme, a ispod se nalazi spisak
-svih tema trenutno koje postoje. U okviru ovog dela može da navigira na bilo koju temu i da
-se na neku pretplati ili da postavi komentar. Nakon što bilo koji korisnik ostavi komentar na
-neku temu neophodno je svim pretplaćenim korisnicima poslati mejl sa komentarom i
-mogućnostima da urade upvote ili downvote. Istu opciju omogućiti i na UI delu. Takođe je
-neophodno omogućiti korisniku da sopstvene teme zatvori ili otvori.
+1. **Korisnički interfejs (UI)** je razvijen kao React aplikacija, koja omogućava korisnicima da:
+   - Registruju nove naloge
+   - Loguju se sa postojećim nalogom
+   - Izmene svoj korisnički profil
+   - Kreiraju nove teme i postavljaju komentare
+   - Upvote/Downvote komentare
+   - Pretplate se na teme i primaju obaveštenja o novim komentarima
+   - Brišu sopstvene teme
+   - Pretražuju i sortiraju teme prema broju komentara, upvote-ova i downvote-ova
+   - Zatvore ili otvore teme za komentarisanje
 
-Slanje mejlova pretplaćenim korisnicima ne sme da poremeti rad sistema. Po mogućnošću
-koristiti neki servis za slanje mejlova ili slati ručno. Primer sistema za slanje mejlova jesu
-Postmark ili SendGrid.
+2. **Backend (Engine)** je implementiran kao Flask API aplikacija. Komunicira sa frontend-om i bazom podataka putem REST API-ja. 
+   - Backend sadrži sve logike vezane za obradu podataka, uključujući registraciju, prijavu, upravljanje temama i komentarima, upvote/downvote funkcionalnosti, slanje obaveštenja korisnicima putem mejlova i više.
+   - **Flask Mail** se koristi za slanje mejlova korisnicima prilikom novih komentara na teme na koje su pretplaćeni.
 
-Engine je servis implementiran kao flask API aplikacija. Engine ima svoje endpointe koje
-prikazuje eksternom svetu (UI aplikaciji) za koriscenje. UI deo poziva endpointe Engine-a radi
-obrade raznih zahteva I podataka. Pri tome samo Engine komunicira sa bazom, a UI sa
-Engine-om.
+3. **Baza podataka (DB)** je PostgreSQL baza koja skladišti sve bitne podatke aplikacije, kao što su korisnici, teme, komentari, upvote/downvote-ovi i obaveštenja. 
+   - Baza je dizajnirana tako da omogućava efikasno skladištenje i pretragu podataka.
 
-**Baza podataka (DB) **
-Baza podataka je u komunikaciji sa Engine-om za svrhu skladistenja podataka o aplikaciji. U
-bazi se skladiste svi esencijalno bitni podaci za rad aplikacije.
-Model baze kao I tip baze (NoSQL, SQL) je proizvoljan.
+4. **Dockerizacija**: Aplikacija, uključujući UI, backend i bazu podataka, je dockerizovana pomoću **Docker Compose** kako bi omogućila lakše postavljanje i skaliranje sistema.
+
+## Akcije koje su podržane u aplikaciji:
+- **Registracija novog korisnika** sa informacijama kao što su ime, prezime, adresa, telefon, email, lozinka.
+- **Logovanje postojećeg korisnika** putem emaila i lozinke.
+- **Izmena korisničkog profila**.
+- **Kreiranje teme** na koju se drugi korisnici mogu pretplatiti i ostaviti komentare.
+- **Postavljanje komentara** uz mogućnost upvote/downvote.
+- **Pretplata na teme** i slanje mejlova svim pretplaćenim korisnicima prilikom novih komentara.
+- **Upvote i downvote komentara** uz mogućnost da se to uradi direktno iz mejla.
+- **Brisanje teme** od strane vlasnika.
+- **Pretraga i sortiranje tema** prema broju komentara, upvote-ova i downvote-ova.
+- **Zatvaranje i otvaranje tema za komentarisanje** od strane vlasnika teme.
+
+## Tehnologije
+- **Frontend**: React + TypeScript
+- **Backend**: Flask
+- **Baza podataka**: PostgreSQL
+- **Slanje mejlova**: Flask Mail
+- **Docker**: Docker Compose za postavljanje aplikacije i baze podataka.
+
+## Pokretanje aplikacije
+
+Da biste pokrenuli aplikaciju na svom računaru, pratite sledeće korake:
+
+### 1. Klonirajte repozitorijum
+
+Klonirajte repo sa GitHub-a:
+
+```bash
+git clone https://github.com/aleksajaglicic/reddit-project.git
+cd reddit-project
+```
+2. Pokrenite aplikaciju koristeći Docker Compose
+```bash
+docker-compose up --build
+```
